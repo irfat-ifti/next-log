@@ -1,0 +1,162 @@
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined");
+@import "tailwindcss";
+
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "liga";
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+/* Tiptap editor content */
+[data-purpose="content-editor-card"] .tiptap {
+  outline: none;
+  min-height: 320px;
+}
+
+[data-purpose="content-editor-card"] .tiptap > * + * {
+  margin-top: 1.25rem;
+}
+
+[data-purpose="content-editor-card"] .tiptap h1,
+[data-purpose="content-editor-card"] .tiptap h2,
+[data-purpose="content-editor-card"] .tiptap h3,
+[data-purpose="content-editor-card"] .tiptap h4,
+[data-purpose="content-editor-card"] .tiptap h5,
+[data-purpose="content-editor-card"] .tiptap h6 {
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+[data-purpose="content-editor-card"] .tiptap h1 {
+  font-size: 1.5rem;
+}
+[data-purpose="content-editor-card"] .tiptap h2 {
+  font-size: 1.25rem;
+}
+[data-purpose="content-editor-card"] .tiptap h3 {
+  font-size: 1.0625rem;
+}
+[data-purpose="content-editor-card"] .tiptap h4 {
+  font-size: 1rem;
+}
+[data-purpose="content-editor-card"] .tiptap h5 {
+  font-size: 0.9375rem;
+}
+[data-purpose="content-editor-card"] .tiptap h6 {
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+[data-purpose="content-editor-card"] .tiptap a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+[data-purpose="content-editor-card"] .tiptap blockquote {
+  border-left: 3px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+[data-purpose="content-editor-card"] .tiptap ul,
+[data-purpose="content-editor-card"] .tiptap ol {
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+[data-purpose="content-editor-card"] .tiptap ul {
+  list-style: disc;
+}
+[data-purpose="content-editor-card"] .tiptap ol {
+  list-style: decimal;
+}
+
+[data-purpose="content-editor-card"] .tiptap code {
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+}
+
+[data-purpose="content-editor-card"] .tiptap pre {
+  background: #0d1117;
+  color: #cbd5e1;
+  border: 1px solid #1e293b;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+[data-purpose="content-editor-card"] .tiptap pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: 0.75rem;
+}
+
+[data-purpose="content-editor-card"] .tiptap hr {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 1.5rem 0;
+}
+
+[data-purpose="content-editor-card"] .tiptap p.is-editor-empty:first-child::before,
+[data-purpose="content-editor-card"] .tiptap .is-empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Selected node while dragging a list / block */
+[data-purpose="content-editor-card"] .tiptap .ProseMirror-selectednode {
+  outline: 2px solid #3b82f6;
+  border-radius: 0.25rem;
+}
+
+/* Bubble / floating menus (rendered in a portal by Tiptap) */
+.tiptap-bubble-menu,
+.tiptap-floating-menu {
+  z-index: 50;
+}
+
+.tiptap-bubble-menu button,
+.tiptap-floating-menu button {
+  cursor: pointer;
+}
+
+.tiptap-bubble-menu button:focus-visible,
+.tiptap-floating-menu button:focus-visible,
+[data-purpose="content-editor-card"] [role="toolbar"] button:focus-visible,
+[data-purpose="content-editor-card"] [role="toolbar"] select:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}

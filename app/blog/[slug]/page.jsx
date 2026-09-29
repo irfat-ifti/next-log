@@ -1,0 +1,583 @@
+import Image from "next/image";
+import blogData from "@/app/data/blogData";
+import Link from "next/link";
+const Page = async ({ params }) => {
+    const { slug } = await params;
+    const blog = blogData.find((blog) => blog.slug === slug);
+    return (
+        <div className='my-25'>
+            <div className="mx-auto w-full max-w-6xl px-4">
+                <nav
+                    aria-label="Breadcrumb"
+                    className="flex items-center gap-2 text-sm text-gray-500"
+                >
+                    <Link
+                        className="flex items-center gap-1 transition-colors hover:text-gray-900"
+                        href="/"
+                    >
+                        <span className="material-symbols-outlined text-[16px]">
+                            home
+                        </span>
+                        <span>Home</span>
+                    </Link>
+
+                    <span className="select-none text-gray-400">/</span>
+
+                    <Link
+                        className="transition-colors hover:text-gray-900"
+                        href="/blog"
+                    >
+                        Blog
+                    </Link>
+
+                    <span className="select-none text-gray-400">/</span>
+
+                    <span
+                        className="max-w-60 truncate text-sm font-medium text-gray-900 sm:max-w-md"
+                        title={blog?.title}
+                    >
+                        {blog?.title}
+                    </span>
+                </nav>
+                <header className="flex flex-col gap-4 mt-8">
+                    {/* Category & Subcategory */}
+                    <div className="flex items-center gap-3">
+                        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-blue-600">
+                            {blog?.category}
+                        </span>
+
+                        <span className="h-1 w-1 rounded-full bg-gray-400" />
+
+                        <span className="text-xs font-medium text-gray-500">
+                            Architecture &amp; Performance
+                        </span>
+                    </div>
+
+                    {/* Title */}
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
+                        {blog?.title}
+                    </h1>
+
+                    {/* Description */}
+                    <p className="text-base leading-relaxed text-gray-500 sm:text-lg">
+                        {blog?.description}
+                    </p>
+
+                    {/* Author Metadata & Social Share Row */}
+                    <div className="flex flex-col justify-between gap-4 border-t border-gray-100 pt-4 sm:flex-row sm:items-center">
+                        {/* Author */}
+                        <div className="flex items-center gap-3">
+                            <img
+                                alt="Irfat Uddin Ifti avatar"
+                                className="h-11 w-11 rounded-full object-cover shadow-sm ring-2 ring-white"
+                                src={blog?.author?.avatar}
+                            />
+
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-sm font-semibold text-gray-900">
+                                        {blog?.author?.name}
+                                    </span>
+
+                                    <span
+                                        className="material-symbols-outlined text-[18px] text-blue-600"
+                                        title="Verified Author"
+                                    >
+                                        verified
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <span>Published on {blog?.publishedAt}</span>
+
+                                    <span className="inline-block h-1 w-1 rounded-full bg-gray-400" />
+
+                                    <span className="flex items-center gap-0.5">
+                                        <span className="material-symbols-outlined text-[14px]">
+                                            schedule
+                                        </span>
+                                        {blog?.readTime}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Share Actions */}
+                        <div className="flex items-center gap-2">
+                            {/* X / Twitter */}
+                            <button
+                                aria-label="Share on X"
+                                className="flex items-center justify-center rounded-lg bg-white p-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900"
+                                title="Share on Twitter / X"
+                                type="button"
+                            >
+                                <svg
+                                    className="h-4 w-4 fill-current"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                </svg>
+                            </button>
+
+                            {/* LinkedIn */}
+                            <button
+                                aria-label="Share on LinkedIn"
+                                className="flex items-center justify-center rounded-lg bg-white p-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900"
+                                title="Share on LinkedIn"
+                                type="button"
+                            >
+                                <svg
+                                    className="h-4 w-4 fill-current"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.45c-.89 0-1.6.72-1.6 1.6 0 .89.72 1.6 1.6 1.6.89 0 1.6-.71 1.6-1.6 0-.88-.71-1.6-1.6-1.6Z" />
+                                </svg>
+                            </button>
+
+                            {/* Copy Link */}
+                            <button
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
+                                id="copyLinkBtn"
+                                type="button"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">
+                                    link
+                                </span>
+
+                                <span id="copyLinkText">Copy Link</span>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+                <Image src={blog?.image} alt={blog.title} width={0}
+                    height={0}
+                    sizes="100vw" className="mt-10 w-full h-auto rounded-2xl object-cover shadow-md" />
+                <article className="mt-10 flex flex-col gap-6 text-base leading-8 text-gray-700 sm:text-lg">
+                    {blog?.content?.content?.map((node, index) => {
+                        switch (node.type) {
+                            case "paragraph":
+                                return (
+                                    <p key={index}>
+                                        {node.content?.map((item, i) => (
+                                            <span key={i}>{item.text}</span>
+                                        ))}
+                                    </p>
+                                );
+
+                            case "heading":
+                                if (node.attrs?.level === 2) {
+                                    return (
+                                        <h2
+                                            key={index}
+                                            className=" text-2xl font-bold leading-tight tracking-[-0.02em] text-gray-950 md:text-3xl"
+                                        >
+                                            {node.content?.map((item, i) => (
+                                                <span key={i}>{item.text}</span>
+                                            ))}
+                                        </h2>
+                                    );
+                                }
+
+                                if (node.attrs?.level === 3) {
+                                    return (
+                                        <h3
+                                            key={index}
+                                            className=" text-xl font-semibold leading-tight tracking-[-0.01em] text-gray-900  md:text-2xl"
+                                        >
+                                            {node.content?.map((item, i) => (
+                                                <span key={i}>{item.text}</span>
+                                            ))}
+                                        </h3>
+                                    );
+                                }
+
+                                return null;
+
+
+                            case "codeBlock":
+                                return (
+                                    <pre
+                                        key={index}
+                                        className="my-6 overflow-x-auto rounded-xl border border-zinc-800 bg-[#0d1117] p-5 text-[13px] leading-6 text-zinc-200 shadow-lg"
+                                    >
+                                        <code className="font-mono">
+                                            {node.content?.map((item) => item.text).join("")}
+                                        </code>
+                                    </pre>
+                                );
+
+
+                            case "bulletList":
+                                return (
+                                    <ul key={index}>
+                                        {node.content?.map((item, itemIndex) => (
+                                            <li key={itemIndex}>
+                                                {item.content?.map((paragraph, paragraphIndex) => (
+                                                    <span key={paragraphIndex}>
+                                                        {paragraph.content?.map((text, textIndex) => (
+                                                            <span key={textIndex}>
+                                                                {text.text}
+                                                            </span>
+                                                        ))}
+                                                    </span>
+                                                ))}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                );
+
+                            case "orderedList":
+                            case "numberList":
+                                return (
+                                    <ol key={index}>
+                                        {node.content?.map((item, itemIndex) => (
+                                            <li key={itemIndex}>
+                                                {item.content?.map((paragraph, paragraphIndex) => (
+                                                    <span key={paragraphIndex}>
+                                                        {paragraph.content?.map((text, textIndex) => (
+                                                            <span key={textIndex}>
+                                                                {text.text}
+                                                            </span>
+                                                        ))}
+                                                    </span>
+                                                ))}
+                                            </li>
+                                        ))}
+                                    </ol>
+                                );
+
+                            case "blockquote":
+                            case "quote":
+                                return (
+                                    <blockquote key={index}>
+                                        {node.content?.map((paragraph, paragraphIndex) => (
+                                            <span key={paragraphIndex}>
+                                                {paragraph.content?.map((text, textIndex) => (
+                                                    <span key={textIndex}>
+                                                        {text.text}
+                                                    </span>
+                                                ))}
+                                            </span>
+                                        ))}
+                                    </blockquote>
+                                );
+
+                            case "callout":
+                                return (
+                                    <div key={index} className={`callout callout-${node.attrs?.variant}`}>
+                                        {node.attrs?.title && (
+                                            <strong>{node.attrs.title}</strong>
+                                        )}
+
+                                        {node.content?.map((paragraph, paragraphIndex) => (
+                                            <p key={paragraphIndex}>
+                                                {paragraph.content?.map((text, textIndex) => (
+                                                    <span key={textIndex}>
+                                                        {text.text}
+                                                    </span>
+                                                ))}
+                                            </p>
+                                        ))}
+                                    </div>
+                                );
+
+                            default:
+                                return null;
+                        }
+                    })}
+                </article>
+                <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4">
+                    {/* Tags */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {
+                            blog?.tags?.map((tag, index) => (
+                                <div
+                                    key={index}
+                                    className="rounded-lg bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm transition-colors hover:bg-gray-100 hover:text-blue-600 cursor-default"
+                                >
+                                    #{tag}
+                                </div>
+                            ))
+                        }
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                        {/* Like */}
+                        <button
+                            className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
+                            id="likeBtn"
+                            type="button"
+                        >
+                            <span
+                                className="material-symbols-outlined text-[18px]"
+                                id="likeIcon"
+                            >
+                                favorite_border
+                            </span>
+
+                            <span id="likeCount">142</span>
+                        </button>
+
+                        {/* Bookmark */}
+                        <button
+                            className="rounded-lg bg-white p-2 text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
+                            id="bookmarkBtn"
+                            title="Bookmark article"
+                            type="button"
+                        >
+                            <span
+                                className="material-symbols-outlined text-[18px]"
+                                id="bookmarkIcon"
+                            >
+                                bookmark_border
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                <section className="mt-10 flex flex-col items-center gap-4 rounded-xl bg-white p-6 text-center shadow-sm sm:flex-row sm:items-start sm:text-left">
+                    <img
+                        alt="Irfat Uddin Ifti portrait"
+                        className="h-20 w-20 shrink-0 rounded-full object-cover shadow-sm ring-4 ring-gray-100"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoJRoLUBfzYJH7jutrOGj7WYtAmZXx8kqRf8SDU4w9rKnr97y_xCoAuQpllOaBuaSKgbLkiywP5LNT8c8GW2meLxMblEUAw7rkZ2Q5d4M8lerop7NwkZebtIQoaZtrIRcyLXaqmMw7tI46NdafE_eOu1QwELIZWukifuUQWtqIZQQo7OAfHr515Qfxgf6cnWKHlG9b1nMGYbMK5FcAypuHNQvrPXDrzuo9YsyunX1GDhwSRUFl1xY"
+                    />
+
+                    <div className="flex flex-1 flex-col items-center gap-2 sm:items-start">
+                        <div className="flex w-full flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                            <div>
+                                <span className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                                    Written by
+                                </span>
+
+                                <h3 className="text-xl font-bold text-gray-900">
+                                    {blog?.author?.name}
+                                </h3>
+                            </div>
+
+                            <a
+                                className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-200"
+                                href="#"
+                            >
+                                <span>View Profile</span>
+
+                                <span className="material-symbols-outlined text-[16px]">
+                                    arrow_forward
+                                </span>
+                            </a>
+                        </div>
+
+                        <p className="text-base text-gray-500">
+                            {blog?.author?.bio}
+                        </p>
+                    </div>
+                </section>
+                <section className="flex flex-col gap-6 pt-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="flex items-center gap-2 text-xl font-bold text-gray-900">
+                            <span>Discussion</span>
+
+                            <span
+                                className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-blue-600"
+                                id="commentsCountLabel"
+                            >
+                                {blog?.comments?.count || 0} Comments
+                            </span>
+                        </h3>
+                    </div>
+
+                    {/* Write a Comment Form Box */}
+                    <div className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
+                        <div className="flex items-start gap-3">
+                            <img
+                                alt="Current User Avatar"
+                                className="h-9 w-9 shrink-0 rounded-full object-cover shadow-sm"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoJRoLUBfzYJH7jutrOGj7WYtAmZXx8kqRf8SDU4w9rKnr97y_xCoAuQpllOaBuaSKgbLkiywP5LNT8c8GW2meLxMblEUAw7rkZ2Q5d4M8lerop7NwkZebtIQoaZtrIRcyLXaqmMw7tI46NdafE_eOu1QwELIZWukifuUQWtqIZQQo7OAfHr515Qfxgf6cnWKHlG9b1nMGYbMK5FcAypuHNQvrPXDrzuo9YsyunX1GDhwSRUFl1xY"
+                            />
+
+                            <div className="flex w-full flex-col gap-2">
+                                <textarea
+                                    className="w-full resize-y rounded-lg p-3 text-base placeholder:text-gray-500 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    id="newCommentInput"
+                                    placeholder="Share your thoughts or ask a question..."
+                                    rows={3}
+                                    defaultValue=""
+                                />
+
+                                <div className="flex flex-col justify-between gap-2 pt-1 sm:flex-row sm:items-center">
+                                    <span className="flex items-center gap-1 text-xs font-medium text-gray-500">
+                                        <span className="material-symbols-outlined text-[16px]">
+                                            info
+                                        </span>
+                                        Markdown supported. Be respectful and constructive.
+                                    </span>
+
+                                    <button
+                                        className="self-end rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 sm:self-auto"
+                                        id="submitCommentBtn"
+                                        type="button"
+                                    >
+                                        Submit Comment
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Existing Comments Thread */}
+                    <div className="flex flex-col gap-4" id="commentsContainer">
+
+                        {/* Comment 1: Mark Davis */}
+                        <div className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-sm">
+                                        MD
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-semibold text-gray-900">
+                                                Mark Davis
+                                            </span>
+
+                                            <span className="text-xs font-medium text-gray-500">
+                                                · 2 days ago
+                                            </span>
+                                        </div>
+
+                                        <span className="text-xs font-medium text-gray-500">
+                                            Frontend Architect
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    className="rounded p-1 text-gray-500 transition-colors hover:text-gray-900"
+                                    title="More actions"
+                                    type="button"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">
+                                        more_horiz
+                                    </span>
+                                </button>
+                            </div>
+
+                            <p className="pl-11 text-base text-gray-900">
+                                Great breakdown of Server vs Client components! Super helpful for
+                                anyone migrating from the Pages router. The architecture diagram
+                                made the prop serialization flow instantly clear.
+                            </p>
+
+                            <div className="flex items-center gap-4 pl-11 text-xs font-medium text-gray-500">
+                                <button
+                                    className="flex items-center gap-1 transition-colors hover:text-blue-600"
+                                    type="button"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">
+                                        thumb_up
+                                    </span>
+                                    <span>12</span>
+                                </button>
+
+                                <button
+                                    className="flex items-center gap-1 transition-colors hover:text-blue-600"
+                                    type="button"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">
+                                        reply
+                                    </span>
+                                    <span>Reply</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Comment 2: Current User / Author with Delete Action */}
+                        <div
+                            className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-blue-600/20"
+                            id="authorCommentRow"
+                        >
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        alt="Irfat Uddin Ifti"
+                                        className="h-9 w-9 rounded-full object-cover shadow-sm ring-2 ring-blue-600"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoJRoLUBfzYJH7jutrOGj7WYtAmZXx8kqRf8SDU4w9rKnr97y_xCoAuQpllOaBuaSKgbLkiywP5LNT8c8GW2meLxMblEUAw7rkZ2Q5d4M8lerop7NwkZebtIQoaZtrIRcyLXaqmMw7tI46NdafE_eOu1QwELIZWukifuUQWtqIZQQo7OAfHr515Qfxgf6cnWKHlG9b1nMGYbMK5FcAypuHNQvrPXDrzuo9YsyunX1GDhwSRUFl1xY"
+                                    />
+
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-semibold text-gray-900">
+                                                Irfat Uddin Ifti
+                                            </span>
+
+                                            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-blue-600">
+                                                Author
+                                            </span>
+
+                                            <span className="text-xs font-medium text-gray-500">
+                                                · 1 day ago
+                                            </span>
+                                        </div>
+
+                                        <span className="text-xs font-medium text-gray-500">
+                                            Software Engineer
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        className="inline-flex items-center gap-1 rounded-lg p-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                                        id="deleteAuthorCommentBtn"
+                                        title="Delete comment"
+                                        type="button"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">
+                                            delete
+                                        </span>
+
+                                        <span className="hidden sm:inline">Delete</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p className="pl-11 text-base text-gray-900">
+                                Thanks Mark! In the next article we'll cover Server Actions with
+                                form mutations and optimistic cache revalidations via{" "}
+                                <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-900">
+                                    revalidatePath()
+                                </code>
+                                . Stay tuned!
+                            </p>
+
+                            <div className="flex items-center gap-4 pl-11 text-xs font-medium text-gray-500">
+                                <button
+                                    className="flex items-center gap-1 transition-colors hover:text-blue-600"
+                                    type="button"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">
+                                        thumb_up
+                                    </span>
+                                    <span>5</span>
+                                </button>
+
+                                <button
+                                    className="flex items-center gap-1 transition-colors hover:text-blue-600"
+                                    type="button"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">
+                                        reply
+                                    </span>
+                                    <span>Reply</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    );
+}
+
+export default Page;
