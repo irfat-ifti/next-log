@@ -91,7 +91,7 @@ const BlogCard = ({ blog, variant }) => {
 
                 <Link href={`/blog/${blog.slug}`} className="relative block overflow-hidden">
                     <Image
-                        src={blog.image}
+                        src={blog?.featuredImage?.url}
                         width={1200}
                         height={600}
                         alt="Picture of the author"
@@ -100,19 +100,19 @@ const BlogCard = ({ blog, variant }) => {
                     {/* Category */}
 
                     <span className={`absolute left-4 top-4 rounded-md px-2.5 py-1 text-sm font-semibold text-blue-600 shadow-sm backdrop-blur bg-white/70`}>
-                        {blog.category}
+                        {blog?.category}
                     </span>
                 </Link>
 
                 <div className="p-6">
                     <h3 className="mb-2 text-lg font-bold text-gray-900 transition-colors group-hover:text-blue-600">
-                        <Link href={`/blog/${blog.slug}`}>
-                            {blog.title}
+                        <Link href={`/blog/${blog?.slug}`}>
+                            {blog?.title}
                         </Link>
                     </h3>
 
                     <p className="mb-4 line-clamp-2 text-base leading-6 text-gray-500">
-                        {blog.excerpt}
+                        {blog?.excerpt}
                     </p>
                 </div>
             </div>
@@ -126,13 +126,13 @@ const BlogCard = ({ blog, variant }) => {
 
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold text-gray-900">
-                            {blog.author.name}
+                            {blog?.author?.name}
                         </span>
 
                         <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                            <span>{blog.publishedAt}</span>
+                            <span>{blog?.publishedAt}</span>
                             <span>•</span>
-                            <span>{blog.readTime}</span>
+                            <span>{blog?.readTime}</span>
                         </div>
                     </div>
                 </div>

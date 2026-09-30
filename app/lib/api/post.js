@@ -1,4 +1,4 @@
-import { db, storage } from "@/app/services/firebase";
+import { db } from "@/app/services/firebase";
 import {
     collection,
     getDocs,
@@ -10,13 +10,9 @@ import {
     query,
     orderBy,
     serverTimestamp,
+    where,
 } from "firebase/firestore";
-import {
-    ref,
-    uploadBytes,
-    getDownloadURL,
-    deleteObject,
-} from "firebase/storage";
+import { uploadImageToImgBB } from "@/app/services/imgbb";
 
 const COLLECTION_NAME = "posts";
 
@@ -35,37 +31,25 @@ export async function createPost(post) {
 
         let featuredImageData = null;
 
-        // Upload featured image to Firebase Storage if it's a File instance
+        // Upload featured image to ImgBB if it's a File instance
         if (typeof window !== "undefined" && post.featuredImage instanceof File) {
-            const file = post.featuredImage;
-            const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-            const uniqueId =
-                typeof crypto !== "undefined" && crypto.randomUUID
-                    ? crypto.randomUUID()
-                    : `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-            const storagePath = `posts/${uniqueId}.${extension}`;
-            const imageRef = ref(storage, storagePath);
-
-            const snapshot = await uploadBytes(imageRef, file, {
-                contentType: file.type || "image/jpeg",
-            });
-
-            const downloadURL = await getDownloadURL(snapshot.ref);
-
+            const uploadResult = await uploadImageToImgBB(post.featuredImage);
             featuredImageData = {
-                url: downloadURL,
-                path: storagePath,
-                name: file.name,
-                type: file.type,
-                size: file.size,
+                url: uploadResult.url,
+                displayUrl: uploadResult.displayUrl,
+                thumbUrl: uploadResult.thumbUrl,
+                deleteUrl: uploadResult.deleteUrl,
+                id: uploadResult.id,
+                name: uploadResult.name,
+                type: uploadResult.type,
+                size: uploadResult.size,
             };
         } else if (post.featuredImage && typeof post.featuredImage === "object" && post.featuredImage.url) {
             featuredImageData = post.featuredImage;
         } else if (typeof post.featuredImage === "string" && post.featuredImage.trim()) {
             featuredImageData = {
                 url: post.featuredImage.trim(),
-                path: "",
+                displayUrl: post.featuredImage.trim(),
                 name: "featured-image",
                 type: "image/*",
                 size: 0,
@@ -75,15 +59,15 @@ export async function createPost(post) {
         // Clean & format tags
         const formattedTags = Array.isArray(post.tags)
             ? post.tags.map((tag) => {
-                  if (typeof tag === "string") {
-                      return { id: tag, name: tag, slug: tag.toLowerCase() };
-                  }
-                  return {
-                      id: tag.id || "",
-                      name: tag.name || "",
-                      slug: tag.slug || "",
-                  };
-              })
+                if (typeof tag === "string") {
+                    return { id: tag, name: tag, slug: tag.toLowerCase() };
+                }
+                return {
+                    id: tag.id || "",
+                    name: tag.name || "",
+                    slug: tag.slug || "",
+                };
+            })
             : [];
 
         // Build final Firestore document
@@ -161,25 +145,47 @@ export async function getPosts() {
 /**
  * Gets a single post by ID.
  */
-export async function getPostById(id) {
+export async function getPostBySlug(slug) {
     try {
-        if (!id) {
-            return { status: false, errorMessage: "Post ID is required" };
+        if (!slug) {
+            return {
+                status: false,
+                errorMessage: "Post slug is required",
+            };
         }
-        const docRef = doc(db, COLLECTION_NAME, String(id));
-        const docSnap = await getDoc(docRef);
 
-        if (!docSnap.exists()) {
-            return { status: false, errorMessage: "Post not found" };
+        const collectionRef = collection(db, COLLECTION_NAME);
+
+        const q = query(
+            collectionRef,
+            where("slug", "==", slug)
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            return {
+                status: false,
+                errorMessage: "Post not found",
+            };
         }
+
+        const docSnap = querySnapshot.docs[0];
 
         return {
             status: true,
-            data: { id: docSnap.id, ...docSnap.data() },
+            data: {
+                id: docSnap.id,
+                ...docSnap.data(),
+            },
         };
     } catch (error) {
-        console.error("getPostById error:", error);
-        return { status: false, errorMessage: error.message };
+        console.error("getPostBySlug error:", error);
+
+        return {
+            status: false,
+            errorMessage: error.message || "Failed to get post",
+        };
     }
 }
 
@@ -215,9 +221,9 @@ export async function updatePost(id, postData) {
 }
 
 /**
- * Deletes a post and optionally its featured image from storage.
+ * Deletes a post.
  */
-export async function deletePost(id, imagePath = null) {
+export async function deletePost(id) {
     try {
         if (!id) {
             return { status: false, errorMessage: "Post ID is required" };
@@ -225,16 +231,6 @@ export async function deletePost(id, imagePath = null) {
 
         const docRef = doc(db, COLLECTION_NAME, String(id));
         await deleteDoc(docRef);
-
-        // Delete image from storage if path exists
-        if (imagePath) {
-            try {
-                const imageRef = ref(storage, imagePath);
-                await deleteObject(imageRef);
-            } catch (err) {
-                console.warn("Could not delete image from storage:", err.message);
-            }
-        }
 
         return {
             status: true,

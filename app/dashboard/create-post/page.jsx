@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import LeftColumn from "@/app/dashboard/create-post/components/LeftColumn";
 import RightColumn from "@/app/dashboard/create-post/components/RightColumn";
 import { createPost } from "@/app/lib/api/post";
 import ShowToast from "@/app/lib/toast";
+
 
 const Page = () => {
     const [content, setContent] = useState({ html: "", json: null });
@@ -25,10 +26,10 @@ const Page = () => {
     const [ogImage, setOgImage] = useState("");
     const [relatedPosts, setRelatedPosts] = useState([]);
     const [allowComments, setAllowComments] = useState(true);
+    const [slugAvailable, setSlugAvailable] = useState(true);
 
     const [loading, setLoading] = useState(false);
     const [loadingAction, setLoadingAction] = useState(null); // 'publish' | 'draft'
-
     const resetForm = () => {
         setTitle("");
         setSlug("");
@@ -51,6 +52,20 @@ const Page = () => {
         if (!title.trim()) {
             ShowToast({
                 message: "Please enter a post title before publishing",
+                type: "warning",
+            });
+            return;
+        }
+        if (!slugAvailable) {
+            ShowToast({
+                message: "Please enter a unique slug",
+                type: "warning",
+            });
+            return;
+        }
+        if (!excerpt.trim()) {
+            ShowToast({
+                message: "Please enter a post summary before publishing",
                 type: "warning",
             });
             return;
@@ -233,6 +248,8 @@ const Page = () => {
                         setFeaturedImage={setFeaturedImage}
                         isFeatured={isFeatured}
                         setIsFeatured={setIsFeatured}
+                        slugAvailable={slugAvailable}
+                        setSlugAvailable={setSlugAvailable}
                     />
                     <RightColumn
                         metaTitle={metaTitle}

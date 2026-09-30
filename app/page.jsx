@@ -1,8 +1,10 @@
 import CTA from "@/app/components/CTA";
 import Image from "next/image";
-import blogData from "@/app/data/blogData";
 import BlogCard from "@/app/components/BlogCard"
-export default function Home() {
+import { getPosts } from "@/app/lib/api/post";
+
+export default async function Home() {
+  const posts = await getPosts();
   const imageSrc = "https://images.pexels.com/photos/8081419/pexels-photo-8081419.jpeg";
 
   return (
@@ -164,12 +166,12 @@ export default function Home() {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 ">
-          {blogData.map((blog) => (
-
-
-            <BlogCard key={blog.id} blog={blog} />
-
-          ))}
+          {posts.data ?
+            posts.data.map((blog) => (
+              <BlogCard key={blog.id} blog={blog} />
+            ))
+            : <p>No posts found</p>
+          }
 
         </div>
         {/* Load More */}

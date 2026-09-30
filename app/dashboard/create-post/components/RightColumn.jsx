@@ -1,5 +1,3 @@
-'use client';
-
 const RightColumn = ({
     metaTitle,
     setMetaTitle,
@@ -55,13 +53,12 @@ const RightColumn = ({
                         >
                             <option value="published">Published</option>
                             <option value="draft">Draft</option>
-                            <option value="scheduled">Scheduled</option>
                         </select>
                     </div>
                 </div>
 
                 {/* Published At DateTime */}
-                <div>
+                {/* <div>
                     <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                         Published At
                     </label>
@@ -88,7 +85,7 @@ const RightColumn = ({
                             onChange={(e) => setPublishDate(e.target.value)}
                         />
                     </div>
-                </div>
+                </div> */}
 
                 {/* Meta Title Field with Counter */}
                 <div>
@@ -181,7 +178,7 @@ const RightColumn = ({
                 </div>
 
                 {/* OG Image Box */}
-                <div>
+                {/* <div>
                     <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                         OG Image URL (Optional)
                     </label>
@@ -192,11 +189,11 @@ const RightColumn = ({
                         onChange={(e) => setOgImage(e.target.value)}
                         className="w-full border border-slate-200 text-xs text-slate-800 rounded-lg py-2 px-3 outline-none focus:border-blue-500"
                     />
-                </div>
+                </div> */}
             </section>
 
             {/* Card: Related Posts */}
-            <section
+            {/* <section
                 className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4"
                 data-purpose="related-posts-card"
             >
@@ -219,7 +216,6 @@ const RightColumn = ({
                     <h2 className="text-sm font-bold text-slate-900">Related Posts</h2>
                 </div>
 
-                {/* Search Filter Field */}
                 <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                         <svg
@@ -242,8 +238,6 @@ const RightColumn = ({
                         type="text"
                     />
                 </div>
-
-                {/* Post Checkbox List */}
                 <div className="space-y-3 pt-1">
                     <label className="flex items-start gap-3 cursor-pointer group">
                         <input
@@ -289,7 +283,7 @@ const RightColumn = ({
                         </div>
                     </label>
                 </div>
-            </section>
+            </section> */}
 
             {/* Card: Comments Switch Setting */}
             <section

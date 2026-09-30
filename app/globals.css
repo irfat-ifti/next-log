@@ -30,7 +30,7 @@
   min-height: 320px;
 }
 
-[data-purpose="content-editor-card"] .tiptap > * + * {
+[data-purpose="content-editor-card"] .tiptap>*+* {
   margin-top: 1.25rem;
 }
 
@@ -48,18 +48,23 @@
 [data-purpose="content-editor-card"] .tiptap h1 {
   font-size: 1.5rem;
 }
+
 [data-purpose="content-editor-card"] .tiptap h2 {
   font-size: 1.25rem;
 }
+
 [data-purpose="content-editor-card"] .tiptap h3 {
   font-size: 1.0625rem;
 }
+
 [data-purpose="content-editor-card"] .tiptap h4 {
   font-size: 1rem;
 }
+
 [data-purpose="content-editor-card"] .tiptap h5 {
   font-size: 0.9375rem;
 }
+
 [data-purpose="content-editor-card"] .tiptap h6 {
   font-size: 0.875rem;
   color: #334155;
@@ -91,6 +96,7 @@
 [data-purpose="content-editor-card"] .tiptap ul {
   list-style: disc;
 }
+
 [data-purpose="content-editor-card"] .tiptap ol {
   list-style: decimal;
 }

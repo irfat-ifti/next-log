@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import TextEditor from "@/app/dashboard/create-post/components/TextEditor";
 import { getCategories } from "@/app/lib/api/category";
 import { getTags } from "@/app/lib/api/tag";
 import TagSelector from "@/app/dashboard/components/TagSelector";
 import ShowToast from "@/app/lib/toast";
+import { isSlugAvailable, sanitizeSlug } from "@/app/lib/slug";
 
 const LeftColumn = ({
     setContent,
@@ -23,9 +24,13 @@ const LeftColumn = ({
     setFeaturedImage,
     isFeatured,
     setIsFeatured,
+    slugAvailable,
+    setSlugAvailable,
 }) => {
     const [categoryList, setCategoryList] = useState([]);
     const [tagList, setTagList] = useState([]);
+    const debounceRef = useRef(null);
+    const [isSlugChecking, setIsSlugChecking] = useState(false);
 
     // Derive image preview directly without cascading renders
     const imagePreview = useMemo(() => {
@@ -75,24 +80,33 @@ const LeftColumn = ({
         };
     }, []);
 
+    const debounceCheckAvailability = (value) => {
+        clearTimeout(debounceRef.current);
+
+        if (!value) {
+            setSlugAvailable(null);
+            setIsSlugChecking(false);
+            return;
+        }
+
+        setIsSlugChecking(true);
+        setSlugAvailable(null);
+
+        debounceRef.current = setTimeout(() => {
+            checkAvailability(value);
+        }, 500);
+    };
+
     const handleTitleChange = (val) => {
         setTitle(val);
-        // Auto-generate slug if slug is currently empty or was synced with title
-        const currentGenerated = title
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, "")
-            .replace(/\s+/g, "-")
-            .replace(/-+/g, "-");
+
+        const currentGenerated = sanitizeSlug(title.trim());
+        const nextGenerated = sanitizeSlug(val);
 
         if (!slug || slug === currentGenerated) {
-            const nextGenerated = val
-                .toLowerCase()
-                .trim()
-                .replace(/[^\w\s-]/g, "")
-                .replace(/\s+/g, "-")
-                .replace(/-+/g, "-");
             setSlug(nextGenerated);
+
+            debounceCheckAvailability(nextGenerated);
         }
     };
 
@@ -120,6 +134,34 @@ const LeftColumn = ({
         const fileInput = document.getElementById("featured-image");
         if (fileInput) {
             fileInput.value = "";
+        }
+    };
+
+    const handleSlugChange = (e) => {
+        const sanitizedSlug = sanitizeSlug(e.target.value);
+
+        setSlug(sanitizedSlug);
+        setSlugAvailable(null);
+
+        debounceCheckAvailability(sanitizedSlug);
+    };
+
+
+    const checkAvailability = async (value) => {
+        if (!value) {
+            setIsSlugChecking(false);
+            return;
+        }
+
+        try {
+            const available = await isSlugAvailable("posts", value);
+
+            setSlugAvailable(available);
+        } catch (error) {
+            console.error("Slug availability check failed:", error);
+            setSlugAvailable(false);
+        } finally {
+            setIsSlugChecking(false);
         }
     };
 
@@ -153,7 +195,7 @@ const LeftColumn = ({
                     </div>
 
                     {/* Featured Post checkbox */}
-                    <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    {/* <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                         <input
                             type="checkbox"
                             checked={Boolean(isFeatured)}
@@ -163,7 +205,7 @@ const LeftColumn = ({
                         <span className="text-xs font-semibold text-slate-700">
                             Featured Post
                         </span>
-                    </label>
+                    </label> */}
                 </div>
 
                 {/* Title Field */}
@@ -193,7 +235,24 @@ const LeftColumn = ({
                         >
                             Slug <span className="text-red-500">*</span>
                         </label>
-                        {slug ? (
+                        {isSlugChecking ? (
+                            <span className="inline-flex items-center text-xs font-medium text-slate-600 gap-1">
+                                <svg
+                                    className="w-3.5 h-3.5 animate-spin"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M12 3v2.5M12 21v2.5M4.93 4.93l1.77 1.77M17.24 17.24l1.77 1.77M21 12h-2.5M21 12h-2.5M4.93 19.07l1.77-1.77M17.24 6.76l1.77-1.77"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                    />
+                                </svg>
+                                Checking...
+                            </span>
+                        ) : slugAvailable === true ? (
                             <span className="inline-flex items-center text-xs font-medium text-emerald-600 gap-1">
                                 <svg
                                     className="w-3.5 h-3.5"
@@ -210,11 +269,26 @@ const LeftColumn = ({
                                 </svg>
                                 Slug ready
                             </span>
-                        ) : null}
+                        ) : slug === "" ? null : <span className="inline-flex items-center text-xs font-medium text-red-600 gap-1">
+                            <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    d="M5 13l4 4L19 7"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2.5"
+                                />
+                            </svg>
+                            Slug is already taken
+                        </span>}
                     </div>
                     <input
                         value={slug}
-                        onChange={(e) => setSlug(e.target.value)}
+                        onChange={(e) => { handleSlugChange(e); }}
                         placeholder="post-slug"
                         className="w-full border border-slate-200 text-sm font-medium text-slate-900 rounded-lg py-2.5 px-3.5 outline-none focus:border-blue-500 transition"
                         id="post-slug"

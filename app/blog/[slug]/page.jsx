@@ -1,9 +1,50 @@
 import Image from "next/image";
-import blogData from "@/app/data/blogData";
+
 import Link from "next/link";
+import { getPostBySlug } from "@/app/lib/api/post";
+import { notFound } from "next/navigation";
+
 const Page = async ({ params }) => {
     const { slug } = await params;
-    const blog = blogData.find((blog) => blog.slug === slug);
+    const res = await getPostBySlug(slug);
+    const blog = res?.data;
+    if (!blog) {
+        return notFound();
+    }
+
+    const authorName =
+        typeof blog?.author === "object"
+            ? blog?.author?.name || "Admin"
+            : blog?.author || "Admin";
+
+    const authorAvatar =
+        typeof blog?.author === "object" && blog?.author?.avatar
+            ? blog?.author?.avatar
+            : null;
+
+    const authorBio =
+        typeof blog?.author === "object" && blog?.author?.bio
+            ? blog?.author?.bio
+            : "Frontend Architect & Developer";
+
+    const publishedDate = blog?.publishDate
+        ? new Date(blog.publishDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        })
+        : blog?.createdAt?.seconds
+            ? new Date(blog.createdAt.seconds * 1000).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            })
+            : blog?.publishedAt || "Recently";
+
+    const readingTime = blog?.readTime || "5 min read";
+    const postDescription = blog?.excerpt || blog?.description || "";
+    const categoryName = blog?.category || "Uncategorized";
+
     return (
         <div className='my-25'>
             <div className="mx-auto w-full max-w-6xl px-4">
@@ -43,7 +84,7 @@ const Page = async ({ params }) => {
                     {/* Category & Subcategory */}
                     <div className="flex items-center gap-3">
                         <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-blue-600">
-                            {blog?.category}
+                            {categoryName}
                         </span>
 
                         <span className="h-1 w-1 rounded-full bg-gray-400" />
@@ -60,23 +101,29 @@ const Page = async ({ params }) => {
 
                     {/* Description */}
                     <p className="text-base leading-relaxed text-gray-500 sm:text-lg">
-                        {blog?.description}
+                        {postDescription}
                     </p>
 
                     {/* Author Metadata & Social Share Row */}
                     <div className="flex flex-col justify-between gap-4 border-t border-gray-100 pt-4 sm:flex-row sm:items-center">
                         {/* Author */}
                         <div className="flex items-center gap-3">
-                            <img
-                                alt="Irfat Uddin Ifti avatar"
-                                className="h-11 w-11 rounded-full object-cover shadow-sm ring-2 ring-white"
-                                src={blog?.author?.avatar}
-                            />
+                            {authorAvatar ? (
+                                <img
+                                    alt={authorName}
+                                    className="h-11 w-11 rounded-full object-cover shadow-sm ring-2 ring-white"
+                                    src={authorAvatar}
+                                />
+                            ) : (
+                                <div className="h-11 w-11 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm ring-2 ring-white">
+                                    {authorName.charAt(0).toUpperCase()}
+                                </div>
+                            )}
 
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-sm font-semibold text-gray-900">
-                                        {blog?.author?.name}
+                                        {authorName}
                                     </span>
 
                                     <span
@@ -88,7 +135,7 @@ const Page = async ({ params }) => {
                                 </div>
 
                                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span>Published on {blog?.publishedAt}</span>
+                                    <span>Published on {publishedDate}</span>
 
                                     <span className="inline-block h-1 w-1 rounded-full bg-gray-400" />
 
@@ -96,7 +143,7 @@ const Page = async ({ params }) => {
                                         <span className="material-symbols-outlined text-[14px]">
                                             schedule
                                         </span>
-                                        {blog?.readTime}
+                                        {readingTime}
                                     </span>
                                 </div>
                             </div>
@@ -149,155 +196,194 @@ const Page = async ({ params }) => {
                         </div>
                     </div>
                 </header>
-                <Image src={blog?.image} alt={blog.title} width={0}
+                <Image src={blog?.featuredImage?.url} alt={blog?.title} width={0}
                     height={0}
                     sizes="100vw" className="mt-10 w-full h-auto rounded-2xl object-cover shadow-md" />
                 <article className="mt-10 flex flex-col gap-6 text-base leading-8 text-gray-700 sm:text-lg">
-                    {blog?.content?.content?.map((node, index) => {
-                        switch (node.type) {
-                            case "paragraph":
-                                return (
-                                    <p key={index}>
-                                        {node.content?.map((item, i) => (
-                                            <span key={i}>{item.text}</span>
-                                        ))}
-                                    </p>
-                                );
-
-                            case "heading":
-                                if (node.attrs?.level === 2) {
+                    {!blog.content ? (
+                        <div
+                            className="blog-content flex flex-col gap-6"
+                            dangerouslySetInnerHTML={{ __html: blog.contentHtml }}
+                        />
+                    ) : (
+                        blog?.content?.content?.map((node, index) => {
+                            switch (node.type) {
+                                case "paragraph":
                                     return (
-                                        <h2
-                                            key={index}
-                                            className=" text-2xl font-bold leading-tight tracking-[-0.02em] text-gray-950 md:text-3xl"
-                                        >
+                                        <p key={index}>
                                             {node.content?.map((item, i) => (
-                                                <span key={i}>{item.text}</span>
+                                                item.marks?.some((m) => m.type === "bold") ? (
+                                                    <strong key={i}>{item.text}</strong>
+                                                ) : (
+                                                    <span key={i}>{item.text}</span>
+                                                )
                                             ))}
-                                        </h2>
+                                        </p>
                                     );
-                                }
 
-                                if (node.attrs?.level === 3) {
+                                case "heading":
+                                    if (node.attrs?.level === 1) {
+                                        return (
+                                            <h1
+                                                key={index}
+                                                className="text-3xl font-bold leading-tight tracking-[-0.02em] text-gray-950 md:text-4xl"
+                                            >
+                                                {node.content?.map((item, i) => (
+                                                    item.marks?.some((m) => m.type === "bold") ? (
+                                                        <strong key={i}>{item.text}</strong>
+                                                    ) : (
+                                                        <span key={i}>{item.text}</span>
+                                                    )
+                                                ))}
+                                            </h1>
+                                        );
+                                    }
+
+                                    if (node.attrs?.level === 2) {
+                                        return (
+                                            <h2
+                                                key={index}
+                                                className=" text-2xl font-bold leading-tight tracking-[-0.02em] text-gray-950 md:text-3xl"
+                                            >
+                                                {node.content?.map((item, i) => (
+                                                    item.marks?.some((m) => m.type === "bold") ? (
+                                                        <strong key={i}>{item.text}</strong>
+                                                    ) : (
+                                                        <span key={i}>{item.text}</span>
+                                                    )
+                                                ))}
+                                            </h2>
+                                        );
+                                    }
+
+                                    if (node.attrs?.level === 3) {
+                                        return (
+                                            <h3
+                                                key={index}
+                                                className=" text-xl font-semibold leading-tight tracking-[-0.01em] text-gray-900  md:text-2xl"
+                                            >
+                                                {node.content?.map((item, i) => (
+                                                    item.marks?.some((m) => m.type === "bold") ? (
+                                                        <strong key={i}>{item.text}</strong>
+                                                    ) : (
+                                                        <span key={i}>{item.text}</span>
+                                                    )
+                                                ))}
+                                            </h3>
+                                        );
+                                    }
+
+                                    return null;
+
+
+                                case "codeBlock":
                                     return (
-                                        <h3
+                                        <pre
                                             key={index}
-                                            className=" text-xl font-semibold leading-tight tracking-[-0.01em] text-gray-900  md:text-2xl"
+                                            className="my-6 overflow-x-auto rounded-xl border border-zinc-800 bg-[#0d1117] p-5 text-[13px] leading-6 text-zinc-200 shadow-lg"
                                         >
-                                            {node.content?.map((item, i) => (
-                                                <span key={i}>{item.text}</span>
-                                            ))}
-                                        </h3>
+                                            <code className="font-mono">
+                                                {node.content?.map((item) => item.text).join("")}
+                                            </code>
+                                        </pre>
                                     );
-                                }
-
-                                return null;
 
 
-                            case "codeBlock":
-                                return (
-                                    <pre
-                                        key={index}
-                                        className="my-6 overflow-x-auto rounded-xl border border-zinc-800 bg-[#0d1117] p-5 text-[13px] leading-6 text-zinc-200 shadow-lg"
-                                    >
-                                        <code className="font-mono">
-                                            {node.content?.map((item) => item.text).join("")}
-                                        </code>
-                                    </pre>
-                                );
+                                case "bulletList":
+                                    return (
+                                        <ul key={index}>
+                                            {node.content?.map((item, itemIndex) => (
+                                                <li key={itemIndex}>
+                                                    {item.content?.map((paragraph, paragraphIndex) => (
+                                                        <span key={paragraphIndex}>
+                                                            {paragraph.content?.map((text, textIndex) => (
+                                                                <span key={textIndex}>
+                                                                    {text.text}
+                                                                </span>
+                                                            ))}
+                                                        </span>
+                                                    ))}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    );
 
+                                case "orderedList":
+                                case "numberList":
+                                    return (
+                                        <ol key={index}>
+                                            {node.content?.map((item, itemIndex) => (
+                                                <li key={itemIndex}>
+                                                    {item.content?.map((paragraph, paragraphIndex) => (
+                                                        <span key={paragraphIndex}>
+                                                            {paragraph.content?.map((text, textIndex) => (
+                                                                <span key={textIndex}>
+                                                                    {text.text}
+                                                                </span>
+                                                            ))}
+                                                        </span>
+                                                    ))}
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    );
 
-                            case "bulletList":
-                                return (
-                                    <ul key={index}>
-                                        {node.content?.map((item, itemIndex) => (
-                                            <li key={itemIndex}>
-                                                {item.content?.map((paragraph, paragraphIndex) => (
-                                                    <span key={paragraphIndex}>
-                                                        {paragraph.content?.map((text, textIndex) => (
-                                                            <span key={textIndex}>
-                                                                {text.text}
-                                                            </span>
-                                                        ))}
-                                                    </span>
-                                                ))}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                );
+                                case "blockquote":
+                                case "quote":
+                                    return (
+                                        <blockquote key={index}>
+                                            {node.content?.map((paragraph, paragraphIndex) => (
+                                                <span key={paragraphIndex}>
+                                                    {paragraph.content?.map((text, textIndex) => (
+                                                        <span key={textIndex}>
+                                                            {text.text}
+                                                        </span>
+                                                    ))}
+                                                </span>
+                                            ))}
+                                        </blockquote>
+                                    );
 
-                            case "orderedList":
-                            case "numberList":
-                                return (
-                                    <ol key={index}>
-                                        {node.content?.map((item, itemIndex) => (
-                                            <li key={itemIndex}>
-                                                {item.content?.map((paragraph, paragraphIndex) => (
-                                                    <span key={paragraphIndex}>
-                                                        {paragraph.content?.map((text, textIndex) => (
-                                                            <span key={textIndex}>
-                                                                {text.text}
-                                                            </span>
-                                                        ))}
-                                                    </span>
-                                                ))}
-                                            </li>
-                                        ))}
-                                    </ol>
-                                );
+                                case "callout":
+                                    return (
+                                        <div key={index} className={`callout callout-${node.attrs?.variant}`}>
+                                            {node.attrs?.title && (
+                                                <strong>{node.attrs.title}</strong>
+                                            )}
 
-                            case "blockquote":
-                            case "quote":
-                                return (
-                                    <blockquote key={index}>
-                                        {node.content?.map((paragraph, paragraphIndex) => (
-                                            <span key={paragraphIndex}>
-                                                {paragraph.content?.map((text, textIndex) => (
-                                                    <span key={textIndex}>
-                                                        {text.text}
-                                                    </span>
-                                                ))}
-                                            </span>
-                                        ))}
-                                    </blockquote>
-                                );
+                                            {node.content?.map((paragraph, paragraphIndex) => (
+                                                <p key={paragraphIndex}>
+                                                    {paragraph.content?.map((text, textIndex) => (
+                                                        <span key={textIndex}>
+                                                            {text.text}
+                                                        </span>
+                                                    ))}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    );
 
-                            case "callout":
-                                return (
-                                    <div key={index} className={`callout callout-${node.attrs?.variant}`}>
-                                        {node.attrs?.title && (
-                                            <strong>{node.attrs.title}</strong>
-                                        )}
-
-                                        {node.content?.map((paragraph, paragraphIndex) => (
-                                            <p key={paragraphIndex}>
-                                                {paragraph.content?.map((text, textIndex) => (
-                                                    <span key={textIndex}>
-                                                        {text.text}
-                                                    </span>
-                                                ))}
-                                            </p>
-                                        ))}
-                                    </div>
-                                );
-
-                            default:
-                                return null;
-                        }
-                    })}
+                                default:
+                                    return null;
+                            }
+                        })
+                    )}
                 </article>
                 <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4">
                     {/* Tags */}
                     <div className="flex flex-wrap items-center gap-2">
                         {
-                            blog?.tags?.map((tag, index) => (
-                                <div
-                                    key={index}
-                                    className="rounded-lg bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm transition-colors hover:bg-gray-100 hover:text-blue-600 cursor-default"
-                                >
-                                    #{tag}
-                                </div>
-                            ))
+                            blog?.tags?.map((tag, index) => {
+                                const tagName = typeof tag === "object" ? tag.name : tag;
+                                return (
+                                    <div
+                                        key={index}
+                                        className="rounded-lg bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm transition-colors hover:bg-gray-100 hover:text-blue-600 cursor-default"
+                                    >
+                                        #{tagName}
+                                    </div>
+                                );
+                            })
                         }
                     </div>
 
@@ -336,11 +422,17 @@ const Page = async ({ params }) => {
                     </div>
                 </div>
                 <section className="mt-10 flex flex-col items-center gap-4 rounded-xl bg-white p-6 text-center shadow-sm sm:flex-row sm:items-start sm:text-left">
-                    <img
-                        alt="Irfat Uddin Ifti portrait"
-                        className="h-20 w-20 shrink-0 rounded-full object-cover shadow-sm ring-4 ring-gray-100"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoJRoLUBfzYJH7jutrOGj7WYtAmZXx8kqRf8SDU4w9rKnr97y_xCoAuQpllOaBuaSKgbLkiywP5LNT8c8GW2meLxMblEUAw7rkZ2Q5d4M8lerop7NwkZebtIQoaZtrIRcyLXaqmMw7tI46NdafE_eOu1QwELIZWukifuUQWtqIZQQo7OAfHr515Qfxgf6cnWKHlG9b1nMGYbMK5FcAypuHNQvrPXDrzuo9YsyunX1GDhwSRUFl1xY"
-                    />
+                    {authorAvatar ? (
+                        <img
+                            alt={authorName}
+                            className="h-20 w-20 shrink-0 rounded-full object-cover shadow-sm ring-4 ring-gray-100"
+                            src={authorAvatar}
+                        />
+                    ) : (
+                        <div className="h-20 w-20 shrink-0 rounded-full bg-blue-600 text-white font-bold text-2xl flex items-center justify-center shadow-sm ring-4 ring-gray-100">
+                            {authorName.charAt(0).toUpperCase()}
+                        </div>
+                    )}
 
                     <div className="flex flex-1 flex-col items-center gap-2 sm:items-start">
                         <div className="flex w-full flex-col justify-between gap-2 sm:flex-row sm:items-center">
@@ -350,7 +442,7 @@ const Page = async ({ params }) => {
                                 </span>
 
                                 <h3 className="text-xl font-bold text-gray-900">
-                                    {blog?.author?.name}
+                                    {authorName}
                                 </h3>
                             </div>
 
@@ -367,7 +459,7 @@ const Page = async ({ params }) => {
                         </div>
 
                         <p className="text-base text-gray-500">
-                            {blog?.author?.bio}
+                            {authorBio}
                         </p>
                     </div>
                 </section>
@@ -542,7 +634,7 @@ const Page = async ({ params }) => {
                             </div>
 
                             <p className="pl-11 text-base text-gray-900">
-                                Thanks Mark! In the next article we'll cover Server Actions with
+                                Thanks Mark! In the next article we&apos;ll cover Server Actions with
                                 form mutations and optimistic cache revalidations via{" "}
                                 <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-900">
                                     revalidatePath()
