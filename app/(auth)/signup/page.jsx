@@ -1,6 +1,9 @@
 "use client";
 import { signup } from "@/app/lib/api/auth";
+import ShowToast from "@/app/lib/toast";
+import { useRouter } from "next/navigation";
 const Page = () => {
+    const router = useRouter();
     const handleSignup = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -9,13 +12,25 @@ const Page = () => {
         const password = formData.get("password");
         const confirmPassword = formData.get("confirmPassword");
         if (password !== confirmPassword) {
-            alert("Passwords do not match");
+            ShowToast({ message: "Password and confirm password do not match", type: "error" });
             return;
         }
         const response = await signup(name, email, password);
+        console.log("response", response);
+
         if (response.error) {
-            alert(response.error);
+            ShowToast({ message: response.error, type: "error" });
+        } else {
+            ShowToast({ message: response.message, type: "success" });
+            success();
         }
+    };
+    const success = () => {
+        document.getElementById("name").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("password").value = "";
+        document.getElementById("confirmPassword").value = "";
+        router.push("/dashboard/profile");
     };
     return (
         <main className="min-h-screen bg-gray-50 px-4 py-16">

@@ -1,23 +1,63 @@
-"use client"
+"use client";
+
 import Logo from "@/public/screen.png";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/app/context/AuthProvider";
+import { signOut } from "firebase/auth";
+import { auth } from "@/app/services/firebase";
+
 const navItems = [
     { name: "Home", href: "/" },
     { name: "Blogs", href: "/blog" },
-    { name: "Dashboard", href: "/dashboard" },
     { name: "About", href: "/about" },
 ];
+
 const Header = () => {
     const pathname = usePathname();
+    const router = useRouter();
+    const { user, profile, loading } = useAuth();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleLogout = async () => {
+        setDropdownOpen(false);
+        await signOut(auth);
+        router.push("/");
+    };
+
+    // Avatar: prefer Firestore avatar, then Firebase Auth photoURL, then initials
+    const avatarSrc = profile?.avatar || user?.photoURL || null;
+    const displayName = profile?.name || user?.displayName || "User";
+    const email = user?.email || "";
+    const role = profile?.role || "author";
+
+    const initials = displayName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-200 bg-white">
-            <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6">
+            <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4">
+                {/* Left: Logo + Nav */}
                 <div className="flex items-center gap-8">
-                    <Link href="/" className={`flex items-center gap-2 ${pathname === '/' ? 'text-blue-600' : ''}`}>
+                    <Link href="/" className="flex items-center gap-2">
                         <Image
                             src={Logo}
                             alt="NextLog Logo"
@@ -32,14 +72,11 @@ const Header = () => {
                                     ? pathname === "/"
                                     : pathname === item.href ||
                                     pathname.startsWith(`${item.href}/`);
-
                             return (
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    aria-current={
-                                        isActive ? "page" : undefined
-                                    }
+                                    aria-current={isActive ? "page" : undefined}
                                     className={`font-medium transition-colors ${isActive
                                         ? "text-blue-600"
                                         : "text-gray-500 hover:text-blue-600"
@@ -59,7 +96,6 @@ const Header = () => {
                         <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[18px] text-gray-400">
                             search
                         </span>
-
                         <input
                             type="text"
                             placeholder="Search articles, tags..."
@@ -67,56 +103,156 @@ const Header = () => {
                         />
                     </div>
 
-                    {/* Write Post */}
-                    <Link
-                        href="#"
-                        className="hidden items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 sm:inline-flex"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">
-                            add
-                        </span>
+                    {/* Auth Section */}
+                    {loading ? (
+                        /* Loading skeleton */
+                        <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
+                    ) : user ? (
+                        /* ── Logged-in: Write Post + Avatar Dropdown ── */
+                        <div className="flex items-center gap-3">
+                            <Link
+                                href="/dashboard/new"
+                                className="hidden items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 sm:inline-flex"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">add</span>
+                                <span>Write Post</span>
+                            </Link>
 
-                        <span>Write Post</span>
-                    </Link>
+                            {/* Avatar + Dropdown */}
+                            <div className="relative" ref={dropdownRef}>
+                                <button
+                                    id="user-menu-button"
+                                    onClick={() => setDropdownOpen((prev) => !prev)}
+                                    className="flex items-center gap-1 rounded-full p-0.5 transition-colors hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                                    aria-haspopup="true"
+                                    aria-expanded={dropdownOpen}
+                                >
+                                    {avatarSrc ? (
+                                        <img
+                                            src={avatarSrc}
+                                            alt={displayName}
+                                            className="h-8 w-8 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                                            {initials}
+                                        </span>
+                                    )}
+                                    <span
+                                        className={`material-symbols-outlined text-[18px] text-gray-400 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
+                                    >
+                                        keyboard_arrow_down
+                                    </span>
+                                </button>
 
-                    {/* Profile */}
-                    <div className="flex items-center gap-2 pl-1">
-                        <button
-                            className="flex items-center gap-1.5 rounded-full p-1 transition-colors hover:bg-gray-100 cursor-pointer    "
-                        >
-                            <img
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoJRoLUBfzYJH7jutrOGj7WYtAmZXx8kqRf8SDU4w9rKnr97y_xCoAuQpllOaBuaSKgbLkiywP5LNT8c8GW2meLxMblEUAw7rkZ2Q5d4M8lerop7NwkZebtIQoaZtrIRcyLXaqmMw7tI46NdafE_eOu1QwELIZWukifuUQWtqIZQQo7OAfHr515Qfxgf6cnWKHlG9b1nMGYbMK5FcAypuHNQvrPXDrzuo9YsyunX1GDhwSRUFl1xY"
-                                alt="Profile"
-                                className="h-8 w-8 rounded-full object-cover"
-                            />
+                                {/* Dropdown Panel */}
+                                {dropdownOpen && (
+                                    <div
+                                        id="user-dropdown"
+                                        className="absolute right-0 mt-2 w-60 origin-top-right rounded-xl border border-gray-100 bg-white shadow-xl ring-1 ring-black/5 animate-[fadeIn_0.15s_ease-out]"
+                                        role="menu"
+                                        aria-labelledby="user-menu-button"
+                                    >
+                                        {/* User Info */}
+                                        <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
+                                            {avatarSrc ? (
+                                                <img
+                                                    src={avatarSrc}
+                                                    alt={displayName}
+                                                    className="h-10 w-10 rounded-full object-cover flex-shrink-0"
+                                                />
+                                            ) : (
+                                                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                                                    {initials}
+                                                </span>
+                                            )}
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-semibold text-gray-900">
+                                                    {displayName}
+                                                </p>
+                                                <p className="truncate text-xs text-gray-400">{email}</p>
+                                                <span className="mt-0.5 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium capitalize text-blue-600">
+                                                    {role}
+                                                </span>
+                                            </div>
+                                        </div>
 
-                            <span className="material-symbols-outlined text-[18px] text-gray-400">
-                                keyboard_arrow_down
-                            </span>
-                        </button>
+                                        {/* Menu Items */}
+                                        <div className="py-1" role="none">
+                                            <Link
+                                                href="/dashboard"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
+                                                role="menuitem"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    dashboard
+                                                </span>
+                                                Dashboard
+                                            </Link>
 
-                        {/* Login / Signup */}
-                        <div className="hidden items-center gap-2 pl-1 text-sm text-gray-500 xl:flex">
+                                            <Link
+                                                href="/dashboard/profile"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
+                                                role="menuitem"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    person
+                                                </span>
+                                                My Profile
+                                            </Link>
+
+                                            <Link
+                                                href="/dashboard/new"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
+                                                role="menuitem"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    edit_note
+                                                </span>
+                                                Write Post
+                                            </Link>
+                                        </div>
+
+                                        {/* Logout */}
+                                        <div className="border-t border-gray-100 py-1" role="none">
+                                            <button
+                                                onClick={handleLogout}
+                                                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                                                role="menuitem"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    logout
+                                                </span>
+                                                Sign Out
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        /* ── Not logged in: Login / Signup ── */
+                        <div className="flex items-center gap-2 text-sm">
                             <Link
                                 href="/login"
-                                className="transition-colors hover:text-gray-900"
+                                className="rounded-lg px-3 py-1.5 font-medium text-gray-600 transition-colors hover:text-blue-600"
                             >
                                 Login
                             </Link>
-
-                            <span className="text-gray-300">/</span>
-
                             <Link
                                 href="/signup"
-                                className="transition-colors hover:text-gray-900"
+                                className="rounded-lg bg-blue-600 px-3 py-1.5 font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
                             >
-                                Signup
+                                Sign Up
                             </Link>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
-        </header >
+        </header>
     );
 };
 

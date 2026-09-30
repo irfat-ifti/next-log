@@ -1,33 +1,110 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "@/app/services/firebase";
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    updateProfile,
+} from "firebase/auth";
+
+import {
+    doc,
+    setDoc,
+} from "firebase/firestore";
+
+import { auth, db } from "@/app/services/firebase";
+
 
 export async function login(email, password) {
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
+
         const user = userCredential.user;
-        console.log("Logged in user:", user.email);
-        return { status: true, user };
+
+        return {
+            status: true,
+            message: "Login successful",
+            user,
+        };
+
     } catch (error) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.error("Error [", errorCode, "]:", errorMessage);
-        return { status: false, error: errorMessage };
+        console.error(
+            "Error [",
+            error.code,
+            "]:",
+            error.message
+        );
+
+        return {
+            status: false,
+            error: error.message,
+        };
     }
 }
 
+
 export async function signup(name, email, password) {
     try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // 1. Create Firebase Auth account
+        const userCredential =
+            await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
         const user = userCredential.user;
-        console.log("Registered user:", user.email);
+
+
+        // 2. Add display name to Auth profile
         await updateProfile(user, {
             displayName: name,
         });
-        return { status: true, user };
+
+
+        // 3. Create Firestore user document
+        const userInformation = {
+            name: name,
+            bio: "",
+            avatar: null,
+            username: "",
+            role: "author",
+
+            socialLinks: {
+                x: "",
+                linkedin: "",
+            },
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+
+
+        // 4. Document ID = Firebase Auth UID
+        await setDoc(
+            doc(db, "users", user.uid),
+            userInformation
+        );
+
+
+        return {
+            status: true,
+            message: "User created successfully",
+            user,
+            userInformation,
+        };
+
     } catch (error) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.error("Error [", errorCode, "]:", errorMessage);
-        return { status: false, error: errorMessage };
+        console.error(
+            "Error [",
+            error.code,
+            "]:",
+            error.message
+        );
+
+        return {
+            status: false,
+            error: error.message,
+        };
     }
 }

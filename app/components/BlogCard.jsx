@@ -85,65 +85,84 @@ const BlogCard = ({ blog, variant }) => {
         );
     }
 
+    // Resolve author name — can be string or object
+    const authorName =
+        typeof blog?.author === "string"
+            ? blog.author
+            : blog?.author?.name || "Unknown Author";
+
+    // Resolve image src safely
+    const imageSrc = blog?.featuredImage?.url || blog?.featuredImage?.displayUrl || null;
+
+    // Format publish date
+    const publishDate = blog?.publishDate
+        ? new Date(blog.publishDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+        : blog?.publishedAt || "";
+
     return (
         <article key={blog.id} className="group flex flex-col justify-between overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md">
             <div>
-
                 <Link href={`/blog/${blog.slug}`} className="relative block overflow-hidden">
-                    <Image
-                        src={blog?.featuredImage?.url}
-                        width={1200}
-                        height={600}
-                        alt="Picture of the author"
-                        className="w-full h-75 object-cover "
-                    />
-                    {/* Category */}
+                    {imageSrc ? (
+                        <img
+                            src={imageSrc}
+                            alt={blog?.title || "Blog post"}
+                            className="w-full h-52 object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                    ) : (
+                        <div className="w-full h-52 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-[48px] text-blue-300">article</span>
+                        </div>
+                    )}
 
-                    <span className={`absolute left-4 top-4 rounded-md px-2.5 py-1 text-sm font-semibold text-blue-600 shadow-sm backdrop-blur bg-white/70`}>
-                        {blog?.category}
-                    </span>
+                    {/* Category */}
+                    {blog?.category && (
+                        <span className="absolute left-4 top-4 rounded-md px-2.5 py-1 text-sm font-semibold text-blue-600 shadow-sm backdrop-blur bg-white/70">
+                            {blog.category}
+                        </span>
+                    )}
                 </Link>
 
                 <div className="p-6">
-                    <h3 className="mb-2 text-lg font-bold text-gray-900 transition-colors group-hover:text-blue-600">
+                    <h3 className="mb-2 text-lg font-bold text-gray-900 transition-colors group-hover:text-blue-600 line-clamp-2">
                         <Link href={`/blog/${blog?.slug}`}>
                             {blog?.title}
                         </Link>
                     </h3>
 
-                    <p className="mb-4 line-clamp-2 text-base leading-6 text-gray-500">
+                    <p className="mb-4 line-clamp-2 text-sm leading-6 text-gray-500">
                         {blog?.excerpt}
                     </p>
                 </div>
             </div>
-            <div className="flex items-center justify-between px-6 pb-6 pt-1">
-                <div className="flex items-center gap-3">
-                    <img
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoJRoLUBfzYJH7jutrOGj7WYtAmZXx8kqRf8SDU4w9rKnr97y_xCoAuQpllOaBuaSKgbLkiywP5LNT8c8GW2meLxMblEUAw7rkZ2Q5d4M8lerop7NwkZebtIQoaZtrIRcyLXaqmMw7tI46NdafE_eOu1QwELIZWukifuUQWtqIZQQo7OAfHr515Qfxgf6cnWKHlG9b1nMGYbMK5FcAypuHNQvrPXDrzuo9YsyunX1GDhwSRUFl1xY"
-                        alt="Irfat Uddin Ifti"
-                        className="h-10 w-10 rounded-full object-cover shadow-sm"
-                    />
+
+            <div className="flex items-center justify-between px-6 pb-6 pt-1 border-t border-gray-50">
+                <div className="flex items-center gap-2.5">
+                    {/* Author initials avatar fallback */}
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white flex-shrink-0">
+                        {authorName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
+                    </span>
 
                     <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-gray-900">
-                            {blog?.author?.name}
-                        </span>
-
-                        <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                            <span>{blog?.publishedAt}</span>
-                            <span>•</span>
-                            <span>{blog?.readTime}</span>
+                        <span className="text-sm font-semibold text-gray-900">{authorName}</span>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                            <span>{publishDate}</span>
+                            {blog?.readTime && (
+                                <>
+                                    <span>•</span>
+                                    <span>{blog.readTime}</span>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
+
                 <button
                     type="button"
-                    className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-blue-600 cursor-pointer"
+                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600 cursor-pointer"
                     title="Bookmark article"
                 >
-                    <span className="material-symbols-outlined text-[20px]">
-                        bookmark
-                    </span>
+                    <span className="material-symbols-outlined text-[20px]">bookmark</span>
                 </button>
             </div>
         </article>
