@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import { useAuth } from "@/app/context/AuthProvider";
 import TaxonomyManager from "@/app/dashboard/components/TaxonomyManager";
 import {
     getCategories,
@@ -8,8 +8,32 @@ import {
     deleteCategory,
     toggleCategoryStatus,
 } from "@/app/lib/api/category";
-
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 export default function CategoryManagement() {
+    const { user, profile, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (loading) return;
+
+        if (!user || !profile) {
+            router.push("/login");
+            return;
+        }
+
+        if (profile.role !== "admin") {
+            router.push("/dashboard");
+        }
+    }, [loading, user, profile, router]);
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (!user || !profile || profile.role !== "admin") {
+        return <div>Loading...</div>;
+    }
     return (
         <TaxonomyManager
             type="category"

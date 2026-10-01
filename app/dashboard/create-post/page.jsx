@@ -6,6 +6,7 @@ import LeftColumn from "@/app/dashboard/create-post/components/LeftColumn";
 import RightColumn from "@/app/dashboard/create-post/components/RightColumn";
 import { createPost } from "@/app/lib/api/post";
 import ShowToast from "@/app/lib/toast";
+import { useAuth } from "@/app/context/AuthProvider";
 
 
 const Page = () => {
@@ -27,9 +28,11 @@ const Page = () => {
     const [relatedPosts, setRelatedPosts] = useState([]);
     const [allowComments, setAllowComments] = useState(true);
     const [slugAvailable, setSlugAvailable] = useState(true);
-
     const [loading, setLoading] = useState(false);
-    const [loadingAction, setLoadingAction] = useState(null); // 'publish' | 'draft'
+    const [loadingAction, setLoadingAction] = useState(null);
+
+    const { user, profile } = useAuth();
+
     const resetForm = () => {
         setTitle("");
         setSlug("");
@@ -101,7 +104,7 @@ const Page = () => {
                 metaDesc: metaDesc.trim(),
                 keywords: Array.isArray(keywords) ? keywords : [],
                 ogImage: ogImage || "",
-                author: author || "Admin",
+                author: { uid: user?.uid, name: profile?.name || user?.displayName, avatar: profile?.avatar || user?.photoURL, bio: profile?.bio || "" },
                 allowComments: Boolean(allowComments),
             };
 

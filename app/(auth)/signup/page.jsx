@@ -2,10 +2,13 @@
 import { signup } from "@/app/lib/api/auth";
 import ShowToast from "@/app/lib/toast";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 const Page = () => {
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
     const handleSignup = async (e) => {
         e.preventDefault();
+        setLoading(true);
         const formData = new FormData(e.target);
         const name = formData.get("name");
         const email = formData.get("email");
@@ -17,7 +20,7 @@ const Page = () => {
         }
         const response = await signup(name, email, password);
         console.log("response", response);
-
+        setLoading(false);
         if (response.error) {
             ShowToast({ message: response.error, type: "error" });
         } else {
@@ -146,10 +149,16 @@ const Page = () => {
                         {/* Submit */}
                         <button
                             type="submit"
+                            disabled={loading}
                             className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
-
-                            Create account
+                            {loading ? (
+                                <>
+                                    Creating account...
+                                </>
+                            ) : (
+                                "Create account"
+                            )}
                         </button>
                     </form>
                     {/* Divider */}

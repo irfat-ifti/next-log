@@ -1,21 +1,53 @@
 import Image from "next/image";
-
 import Link from "next/link";
 import { getPostBySlug } from "@/app/lib/api/post";
 import { notFound } from "next/navigation";
+import { cache } from "react";
+
+
+const getPost = cache(async (slug) => {
+    return await getPostBySlug(slug)
+})
+export async function generateMetadata({ params }) {
+    const { slug } = await params
+    const res = await getPost(slug)
+    const blog = res?.data
+    if (!blog) {
+        notFound();
+    }
+    return {
+        title: blog.metaTitle || blog.title,
+        description: blog.metaDesc || blog.excerpt,
+
+        openGraph: {
+            title: blog.metaTitle || blog.title,
+            description: blog.metaDesc || blog.excerpt,
+            images: blog?.featuredImage?.url ? [{ url: blog?.featuredImage?.url, width: 800, height: 600, alt: blog.title }] : [],
+            type: "article",
+        },
+
+        twitter: {
+            card: "summary_large_image",
+            title: blog.metaTitle || blog.title,
+            description: blog.metaDesc || blog.excerpt,
+            images: blog?.featuredImage?.url ? [{ url: blog?.featuredImage?.url, width: 800, height: 600, alt: blog.title }] : [],
+        },
+    };
+}
+
 
 const Page = async ({ params }) => {
     const { slug } = await params;
-    const res = await getPostBySlug(slug);
+    const res = await getPost(slug);
     const blog = res?.data;
     if (!blog) {
-        return notFound();
+        notFound();
     }
+    console.log("blog", blog);
+
 
     const authorName =
-        typeof blog?.author === "object"
-            ? blog?.author?.name || "Admin"
-            : blog?.author || "Admin";
+        typeof blog?.author === "object" ? blog?.author?.name : "";
 
     const authorAvatar =
         typeof blog?.author === "object" && blog?.author?.avatar
@@ -25,7 +57,7 @@ const Page = async ({ params }) => {
     const authorBio =
         typeof blog?.author === "object" && blog?.author?.bio
             ? blog?.author?.bio
-            : "Frontend Architect & Developer";
+            : "";
 
     const publishedDate = blog?.publishDate
         ? new Date(blog.publishDate).toLocaleDateString("en-US", {
@@ -196,7 +228,7 @@ const Page = async ({ params }) => {
                         </div>
                     </div>
                 </header>
-                <Image src={blog?.featuredImage?.url} alt={blog?.title} width={0}
+                <Image src={blog?.featuredImage?.url || "https://images.pexels.com/photos/28216688/pexels-photo-28216688.png?_gl=1*1ddrzpr*_ga*MTg0Mjc0ODg1My4xNzkwODc0Nzcw*_ga_8JE65Q40S6*czE3OTA4NzQ3NjkkbzEkZzEkdDE3OTA4NzQ3OTUkajM0JGwwJGgw"} alt={blog?.title} width={0}
                     height={0}
                     sizes="100vw" className="mt-10 w-full h-auto rounded-2xl object-cover shadow-md" />
                 <article className="mt-10 flex flex-col gap-6 text-base leading-8 text-gray-700 sm:text-lg">

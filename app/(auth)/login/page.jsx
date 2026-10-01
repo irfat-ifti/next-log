@@ -1,4 +1,32 @@
+"use client";
+import { login } from "@/app/lib/api/auth";
+import ShowToast from "@/app/lib/toast";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 const Page = () => {
+    const [loading, setLoading] = useState(false);
+    const router = useRouter();
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        const formData = new FormData(e.target);
+        const email = formData.get("email");
+        const password = formData.get("password");
+
+        const response = await login(email, password);
+        setLoading(false);
+        if (response.error) {
+            ShowToast({ message: response.error, type: "error" });
+        } else {
+            ShowToast({ message: response.message, type: "success" });
+            success();
+        }
+    };
+    const success = () => {
+        document.getElementById("email").value = "";
+        document.getElementById("password").value = "";
+        router.push("/dashboard/profile");
+    };
     return (
         <main className="min-h-screen bg-gray-50 px-4 py-16">
             <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center justify-center">
@@ -20,7 +48,7 @@ const Page = () => {
                         </p>
                     </div>
                     {/* Login Form */}
-                    <form className="space-y-5">
+                    <form onSubmit={handleLogin} className="space-y-5">
                         {/* Email */}
                         <div>
                             <label
@@ -68,9 +96,16 @@ const Page = () => {
                         {/* Submit */}
                         <button
                             type="submit"
+                            disabled={loading}
                             className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
-                            Sign in
+                            {loading ? (
+                                <>
+                                    Signing in...
+                                </>
+                            ) : (
+                                "Sign in"
+                            )}
                         </button>
                     </form>
                     {/* Divider */}

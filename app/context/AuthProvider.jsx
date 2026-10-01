@@ -34,8 +34,6 @@ export function AuthProvider({ children }) {
                     return;
                 }
 
-                setUser(authUser);
-
                 try {
                     const userRef = doc(
                         db,
@@ -46,6 +44,7 @@ export function AuthProvider({ children }) {
                     const userSnap = await getDoc(userRef);
 
                     if (userSnap.exists()) {
+                        setUser(authUser);
                         setProfile(userSnap.data());
                     } else {
                         setProfile(null);
