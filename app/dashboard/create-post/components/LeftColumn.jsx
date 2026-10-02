@@ -26,6 +26,9 @@ const LeftColumn = ({
     setIsFeatured,
     slugAvailable,
     setSlugAvailable,
+    initialContent = "",
+    isEdit = false,
+    currentPostId = null,
 }) => {
     const [categoryList, setCategoryList] = useState([]);
     const [tagList, setTagList] = useState([]);
@@ -40,6 +43,9 @@ const LeftColumn = ({
         }
         if (typeof featuredImage === "string") {
             return featuredImage;
+        }
+        if (typeof featuredImage === "object" && (featuredImage.url || featuredImage.displayUrl)) {
+            return featuredImage.displayUrl || featuredImage.url;
         }
         return null;
     }, [featuredImage]);
@@ -80,10 +86,13 @@ const LeftColumn = ({
         };
     }, []);
 
+    const isSlugManualRef = useRef(Boolean(isEdit && slug));
+
     const debounceCheckAvailability = (value) => {
         clearTimeout(debounceRef.current);
+        const clean = sanitizeSlug(value);
 
-        if (!value) {
+        if (!clean) {
             setSlugAvailable(null);
             setIsSlugChecking(false);
             return;
@@ -93,19 +102,23 @@ const LeftColumn = ({
         setSlugAvailable(null);
 
         debounceRef.current = setTimeout(() => {
-            checkAvailability(value);
-        }, 500);
+            checkAvailability(clean);
+        }, 400);
     };
 
     const handleTitleChange = (val) => {
         setTitle(val);
 
-        const currentGenerated = sanitizeSlug(title.trim());
-        const nextGenerated = sanitizeSlug(val);
+        // If in edit mode and slug already exists, or user manually customized slug, do not auto-overwrite
+        if (isEdit && isSlugManualRef.current) {
+            return;
+        }
 
-        if (!slug || slug === currentGenerated) {
+        if (!isSlugManualRef.current) {
+            // allowTrailingHyphen:true so that mid-word typing doesn't strip the hyphen separator
+            // (e.g. "hello world" → "hello-world", not "hello" after first space)
+            const nextGenerated = sanitizeSlug(val, { allowTrailingHyphen: true });
             setSlug(nextGenerated);
-
             debounceCheckAvailability(nextGenerated);
         }
     };
@@ -138,24 +151,41 @@ const LeftColumn = ({
     };
 
     const handleSlugChange = (e) => {
-        const sanitizedSlug = sanitizeSlug(e.target.value);
+        const rawVal = e.target.value;
 
-        setSlug(sanitizedSlug);
-        setSlugAvailable(null);
-
-        debounceCheckAvailability(sanitizedSlug);
-    };
-
-
-    const checkAvailability = async (value) => {
-        if (!value) {
+        // If user clears the slug completely, allow re-syncing from title
+        if (!rawVal.trim()) {
+            isSlugManualRef.current = false;
+            setSlug("");
+            setSlugAvailable(null);
             setIsSlugChecking(false);
             return;
         }
 
-        try {
-            const available = await isSlugAvailable("posts", value);
+        isSlugManualRef.current = true;
+        const sanitized = sanitizeSlug(rawVal, { allowTrailingHyphen: true });
+        setSlug(sanitized);
+        debounceCheckAvailability(sanitized);
+    };
 
+    const handleSlugBlur = () => {
+        const finalSlug = sanitizeSlug(slug);
+        if (finalSlug !== slug) {
+            setSlug(finalSlug);
+            debounceCheckAvailability(finalSlug);
+        }
+    };
+
+    const checkAvailability = async (value) => {
+        const clean = sanitizeSlug(value);
+        if (!clean) {
+            setIsSlugChecking(false);
+            setSlugAvailable(null);
+            return;
+        }
+
+        try {
+            const available = await isSlugAvailable("posts", clean, currentPostId);
             setSlugAvailable(available);
         } catch (error) {
             console.error("Slug availability check failed:", error);
@@ -235,60 +265,54 @@ const LeftColumn = ({
                         >
                             Slug <span className="text-red-500">*</span>
                         </label>
-                        {isSlugChecking ? (
-                            <span className="inline-flex items-center text-xs font-medium text-slate-600 gap-1">
-                                <svg
-                                    className="w-3.5 h-3.5 animate-spin"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        d="M12 3v2.5M12 21v2.5M4.93 4.93l1.77 1.77M17.24 17.24l1.77 1.77M21 12h-2.5M21 12h-2.5M4.93 19.07l1.77-1.77M17.24 6.76l1.77-1.77"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                    />
-                                </svg>
-                                Checking...
-                            </span>
-                        ) : slugAvailable === true ? (
-                            <span className="inline-flex items-center text-xs font-medium text-emerald-600 gap-1">
-                                <svg
-                                    className="w-3.5 h-3.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        d="M5 13l4 4L19 7"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2.5"
-                                    />
-                                </svg>
-                                Slug ready
-                            </span>
-                        ) : slug === "" ? null : <span className="inline-flex items-center text-xs font-medium text-red-600 gap-1">
-                            <svg
-                                className="w-3.5 h-3.5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    d="M5 13l4 4L19 7"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2.5"
-                                />
-                            </svg>
-                            Slug is already taken
-                        </span>}
+                        {/* Only show badge when slug field has a value */}
+                        {slug && slug.trim() ? (
+                            isSlugChecking ? (
+                                <span className="inline-flex items-center text-xs font-medium text-slate-500 gap-1.5">
+                                    <span className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                                    Checking...
+                                </span>
+                            ) : slugAvailable === true ? (
+                                <span className="inline-flex items-center text-xs font-medium text-emerald-600 gap-1">
+                                    <svg
+                                        className="w-3.5 h-3.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="M5 13l4 4L19 7"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2.5"
+                                        />
+                                    </svg>
+                                    Slug ready
+                                </span>
+                            ) : slugAvailable === false ? (
+                                <span className="inline-flex items-center text-xs font-medium text-red-600 gap-1">
+                                    <svg
+                                        className="w-3.5 h-3.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="M6 18L18 6M6 6l12 12"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                        />
+                                    </svg>
+                                    Slug is already taken
+                                </span>
+                            ) : null
+                        ) : null}
                     </div>
                     <input
                         value={slug}
-                        onChange={(e) => { handleSlugChange(e); }}
+                        onChange={handleSlugChange}
+                        onBlur={handleSlugBlur}
                         placeholder="post-slug"
                         className="w-full border border-slate-200 text-sm font-medium text-slate-900 rounded-lg py-2.5 px-3.5 outline-none focus:border-blue-500 transition"
                         id="post-slug"
@@ -444,7 +468,7 @@ const LeftColumn = ({
             </section>
 
             {/* Card: Content Rich Editor */}
-            <TextEditor onChange={setContent} />
+            <TextEditor onChange={setContent} initialContent={initialContent} />
         </div>
     );
 };

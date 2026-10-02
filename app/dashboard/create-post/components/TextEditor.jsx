@@ -74,6 +74,17 @@ const RichTextEditor = ({
         editor?.setEditable(editable)
     }, [editor, editable])
 
+    useEffect(() => {
+        if (editor && initialContent && !editor.isDestroyed) {
+            // Use getText().trim() instead of editor.isEmpty because Tiptap
+            // may return isEmpty:false for a bare empty paragraph node
+            const hasRealContent = editor.getText().trim().length > 0;
+            if (!hasRealContent) {
+                editor.commands.setContent(initialContent)
+            }
+        }
+    }, [editor, initialContent])
+
     useImperativeHandle(
         ref,
         () => ({

@@ -1,3 +1,4 @@
+import Link from "next/link";
 
 const NotFound = () => {
     return (
@@ -21,11 +22,11 @@ const NotFound = () => {
                             Page not found
                         </h1>
                         <p className="mx-auto mb-8 max-w-md text-sm leading-6 text-gray-500 sm:text-base">
-                            The page you are looking for doesn't exist or may have been moved to
+                            The page you are looking for doesn&apos;t exist or may have been moved to
                             another location.
                         </p>
                         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                            <a
+                            <Link
                                 href="/"
                                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto"
                             >
@@ -33,8 +34,8 @@ const NotFound = () => {
                                     home
                                 </span>
                                 <span>Back to Home</span>
-                            </a>
-                            <a
+                            </Link>
+                            <Link
                                 href="/blog"
                                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
                             >
@@ -42,7 +43,7 @@ const NotFound = () => {
                                     article
                                 </span>
                                 <span>Explore Articles</span>
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -51,8 +52,7 @@ const NotFound = () => {
                 </p>
             </div>
         </main>
-
     );
-}
+};
 
 export default NotFound;

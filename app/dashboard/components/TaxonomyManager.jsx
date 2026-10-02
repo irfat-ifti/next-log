@@ -1,7 +1,9 @@
 "use client";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import ShowToast from "@/app/lib/toast";
 import { Oval, TailSpin } from "react-loader-spinner";
+import ConfirmationModal from "@/app/components/ConfirmationModal";
+import { sanitizeSlug, isSlugAvailable } from "@/app/lib/slug";
 
 const emptyForm = {
     name: "",
@@ -14,14 +16,7 @@ const emptyForm = {
     canonicalUrl: "",
 };
 
-const slugify = (value = "") => {
-    return value
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
-};
+
 
 export default function TaxonomyManager({
     type = "category",
@@ -47,6 +42,10 @@ export default function TaxonomyManager({
     const [editingItem, setEditingItem] = useState(null);
     const [form, setForm] = useState(emptyForm);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    // null = unchecked, true = available, false = taken, "checking" = in progress
+    const [slugAvailable, setSlugAvailable] = useState(null);
+    const slugManuallyEdited = useRef(false);
+    const slugDebounceTimer = useRef(null);
 
     // Initial load from API
     useEffect(() => {
@@ -90,9 +89,29 @@ export default function TaxonomyManager({
         });
     }, [items, search, statusFilter]);
 
+    // Debounced slug availability check
+    const checkSlugAvailability = useCallback(
+        (slug, excludeId = null, collectionName = type === "category" ? "categories" : "tags") => {
+            clearTimeout(slugDebounceTimer.current);
+            const clean = sanitizeSlug(slug);
+            if (!clean) {
+                setSlugAvailable(null);
+                return;
+            }
+            setSlugAvailable("checking");
+            slugDebounceTimer.current = setTimeout(async () => {
+                const available = await isSlugAvailable(collectionName, clean, excludeId);
+                setSlugAvailable(available);
+            }, 500);
+        },
+        [type]
+    );
+
     const openCreateModal = () => {
         setEditingItem(null);
         setForm(emptyForm);
+        slugManuallyEdited.current = false;
+        setSlugAvailable(null);
         setShowModal(true);
     };
 
@@ -108,6 +127,9 @@ export default function TaxonomyManager({
             seoDescription: item.seoDescription || "",
             canonicalUrl: item.canonicalUrl || "",
         });
+        slugManuallyEdited.current = false;
+        // Existing slug is valid for this item
+        setSlugAvailable(item.slug ? true : null);
         setShowModal(true);
     };
 
@@ -115,19 +137,74 @@ export default function TaxonomyManager({
         setShowModal(false);
         setEditingItem(null);
         setForm(emptyForm);
+        slugManuallyEdited.current = false;
+        setSlugAvailable(null);
+        clearTimeout(slugDebounceTimer.current);
     };
 
     const handleNameChange = (value) => {
-        setForm((prev) => ({
-            ...prev,
-            name: value,
-            slug: editingItem ? prev.slug : slugify(value),
-        }));
+        setForm((prev) => {
+            // Only auto-generate slug when creating and user hasn't manually edited it
+            if (!editingItem && !slugManuallyEdited.current) {
+                const autoSlug = sanitizeSlug(value, { allowTrailingHyphen: false });
+                // Trigger availability check for auto-generated slug
+                checkSlugAvailability(autoSlug);
+                return { ...prev, name: value, slug: autoSlug };
+            }
+            return { ...prev, name: value };
+        });
+    };
+
+    const handleSlugChange = (rawValue) => {
+        slugManuallyEdited.current = true;
+        const sanitized = sanitizeSlug(rawValue, { allowTrailingHyphen: true });
+        setForm((prev) => ({ ...prev, slug: sanitized }));
+        checkSlugAvailability(sanitized, editingItem?.id || null);
+    };
+
+    const handleSlugBlur = () => {
+        // On blur, strip trailing hyphens for the final value
+        setForm((prev) => {
+            const clean = sanitizeSlug(prev.slug);
+            if (clean !== prev.slug) {
+                checkSlugAvailability(clean, editingItem?.id || null);
+                return { ...prev, slug: clean };
+            }
+            return prev;
+        });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.name.trim()) return;
+
+        // --- Slug validation ---
+        const cleanSlug = sanitizeSlug(form.slug);
+
+        if (!cleanSlug) {
+            ShowToast({ message: "Please enter a valid slug.", type: "warning" });
+            return;
+        }
+
+        if (slugAvailable === "checking") {
+            ShowToast({ message: "Please wait while the slug is being checked.", type: "warning" });
+            return;
+        }
+
+        if (slugAvailable === false) {
+            ShowToast({ message: "This slug is already taken. Please choose a unique slug.", type: "error" });
+            return;
+        }
+
+        // Final Firestore double-check before saving
+        const collectionName = type === "category" ? "categories" : "tags";
+        const excludeId = editingItem?.id || null;
+        const isUnique = await isSlugAvailable(collectionName, cleanSlug, excludeId);
+        if (!isUnique) {
+            setSlugAvailable(false);
+            ShowToast({ message: "This slug is already taken. Please choose a unique slug.", type: "error" });
+            return;
+        }
 
         setSaving(true);
         try {
@@ -622,20 +699,43 @@ export default function TaxonomyManager({
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-slate-700 mb-2">
-                                            Slug
+                                        <label className="block text-xs font-semibold text-slate-700 mb-2 flex items-center justify-between">
+                                            <span>Slug</span>
+                                            {form.slug && (
+                                                <span
+                                                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                                        slugAvailable === "checking"
+                                                            ? "bg-amber-50 text-amber-600"
+                                                            : slugAvailable === true
+                                                            ? "bg-emerald-50 text-emerald-600"
+                                                            : slugAvailable === false
+                                                            ? "bg-red-50 text-red-500"
+                                                            : "bg-slate-100 text-slate-400"
+                                                    }`}
+                                                >
+                                                    {slugAvailable === "checking"
+                                                        ? "Checking..."
+                                                        : slugAvailable === true
+                                                        ? "✓ Available"
+                                                        : slugAvailable === false
+                                                        ? "✗ Taken"
+                                                        : ""}
+                                                </span>
+                                            )}
                                         </label>
                                         <input
                                             type="text"
                                             value={form.slug}
-                                            onChange={(e) =>
-                                                setForm((prev) => ({
-                                                    ...prev,
-                                                    slug: slugify(e.target.value),
-                                                }))
-                                            }
+                                            onChange={(e) => handleSlugChange(e.target.value)}
+                                            onBlur={handleSlugBlur}
                                             placeholder={hasParent ? "technology" : "react"}
-                                            className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                                            className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-mono outline-none focus:ring-2 transition ${
+                                                slugAvailable === false
+                                                    ? "border-red-400 focus:border-red-400 focus:ring-red-400/10"
+                                                    : slugAvailable === true
+                                                    ? "border-emerald-400 focus:border-emerald-400 focus:ring-emerald-400/10"
+                                                    : "border-slate-300 focus:border-blue-500 focus:ring-blue-500/10"
+                                            }`}
                                         />
                                     </div>
                                 </div>
@@ -814,76 +914,22 @@ export default function TaxonomyManager({
             )}
 
             {/* Delete Confirmation */}
-            {deleteTarget && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-                        onClick={() => setDeleteTarget(null)}
-                    />
-
-                    <div className="relative bg-white w-full max-w-md rounded-xl shadow-2xl p-6">
-                        <div className="w-11 h-11 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                            <svg
-                                className="w-5 h-5 text-red-600"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    d="M12 9v4m0 4h.01M10.3 3.5h3.4L21 17.8a2 2 0 0 1-1.73 3H4.73A2 2 0 0 1 3 17.8L10.3 3.5z"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                />
-                            </svg>
-                        </div>
-
-                        <h3 className="text-lg font-bold text-slate-900">
-                            Delete {title.toLowerCase().slice(0, -1)}?
-                        </h3>
-
-                        <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                            Are you sure you want to delete{" "}
-                            <strong className="text-slate-700">
-                                {deleteTarget.name}
-                            </strong>
-                            ? This action cannot be undone.
-                        </p>
-
-                        <div className="flex justify-end gap-3 mt-6">
-                            <button
-                                type="button"
-                                disabled={deleting}
-                                onClick={() => setDeleteTarget(null)}
-                                className="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={deleting}
-                                onClick={handleDelete}
-                                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center gap-2"
-                            >
-                                {deleting && (
-                                    <Oval
-                                        height="16"
-                                        width="16"
-                                        color="#ffffff"
-                                        secondaryColor="rgba(255,255,255,0.4)"
-                                        strokeWidth={3}
-                                        strokeWidthSecondary={3}
-                                        ariaLabel="deleting"
-                                        visible={true}
-                                    />
-                                )}
-                                <span>Delete {title.slice(0, -1)}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmationModal
+                isOpen={Boolean(deleteTarget)}
+                onClose={() => !deleting && setDeleteTarget(null)}
+                onConfirm={handleDelete}
+                title={`Delete ${title.toLowerCase().slice(0, -1)}?`}
+                message={
+                    <span>
+                        Are you sure you want to delete{" "}
+                        <strong className="text-slate-800 font-semibold">{deleteTarget?.name}</strong>? This action cannot be undone.
+                    </span>
+                }
+                confirmText={`Delete ${title.slice(0, -1)}`}
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleting}
+            />
         </div>
     );
 }

@@ -116,18 +116,45 @@ export async function createPost(post) {
 /**
  * Fetches all posts ordered by creation date.
  */
+// export async function getPosts() {
+//     try {
+//         const collectionRef = collection(db, COLLECTION_NAME);
+//         let querySnapshot;
+//         try {
+//             const q = query(collectionRef, orderBy("createdAtTimestamp", "desc"));
+//             querySnapshot = await getDocs(q);
+//         } catch {
+//             querySnapshot = await getDocs(collectionRef);
+//         }
+
+//         const posts = [];
+//         querySnapshot.forEach((docSnap) => {
+//             posts.push({
+//                 id: docSnap.id,
+//                 ...docSnap.data(),
+//             });
+//         });
+
+//         return { status: true, data: posts };
+//     } catch (error) {
+//         console.error("getPosts error:", error);
+//         return { status: false, errorMessage: error.message, data: [] };
+//     }
+// }
 export async function getPosts() {
     try {
         const collectionRef = collection(db, COLLECTION_NAME);
-        let querySnapshot;
-        try {
-            const q = query(collectionRef, orderBy("createdAtTimestamp", "desc"));
-            querySnapshot = await getDocs(q);
-        } catch {
-            querySnapshot = await getDocs(collectionRef);
-        }
+
+        const q = query(
+            collectionRef,
+            where("status", "==", "published"),
+            orderBy("createdAtTimestamp", "desc")
+        );
+
+        const querySnapshot = await getDocs(q);
 
         const posts = [];
+
         querySnapshot.forEach((docSnap) => {
             posts.push({
                 id: docSnap.id,
@@ -135,10 +162,18 @@ export async function getPosts() {
             });
         });
 
-        return { status: true, data: posts };
+        return {
+            status: true,
+            data: posts,
+        };
     } catch (error) {
         console.error("getPosts error:", error);
-        return { status: false, errorMessage: error.message, data: [] };
+
+        return {
+            status: false,
+            errorMessage: error.message,
+            data: [],
+        };
     }
 }
 
@@ -190,6 +225,44 @@ export async function getPostBySlug(slug) {
 }
 
 /**
+ * Gets a single post by document ID.
+ */
+export async function getPostById(id) {
+    try {
+        if (!id) {
+            return {
+                status: false,
+                errorMessage: "Post ID is required",
+            };
+        }
+
+        const docRef = doc(db, COLLECTION_NAME, String(id));
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            return {
+                status: false,
+                errorMessage: "Post not found",
+            };
+        }
+
+        return {
+            status: true,
+            data: {
+                id: docSnap.id,
+                ...docSnap.data(),
+            },
+        };
+    } catch (error) {
+        console.error("getPostById error:", error);
+        return {
+            status: false,
+            errorMessage: error.message || "Failed to get post",
+        };
+    }
+}
+
+/**
  * Updates an existing post.
  */
 export async function updatePost(id, postData) {
@@ -197,10 +270,55 @@ export async function updatePost(id, postData) {
         if (!id) {
             return { status: false, errorMessage: "Post ID is required" };
         }
+        if (!postData) {
+            return { status: false, errorMessage: "Post data is required" };
+        }
+
+        let featuredImageData = postData.featuredImage;
+
+        // Upload featured image to ImgBB if a new File is provided
+        if (typeof window !== "undefined" && postData.featuredImage instanceof File) {
+            const uploadResult = await uploadImageToImgBB(postData.featuredImage);
+            featuredImageData = {
+                url: uploadResult.url,
+                displayUrl: uploadResult.displayUrl,
+                thumbUrl: uploadResult.thumbUrl,
+                deleteUrl: uploadResult.deleteUrl,
+                id: uploadResult.id,
+                name: uploadResult.name,
+                type: uploadResult.type,
+                size: uploadResult.size,
+            };
+        } else if (typeof postData.featuredImage === "string" && postData.featuredImage.trim()) {
+            featuredImageData = {
+                url: postData.featuredImage.trim(),
+                displayUrl: postData.featuredImage.trim(),
+                name: "featured-image",
+                type: "image/*",
+                size: 0,
+            };
+        }
+
+        // Clean & format tags if provided
+        let formattedTags = postData.tags;
+        if (Array.isArray(postData.tags)) {
+            formattedTags = postData.tags.map((tag) => {
+                if (typeof tag === "string") {
+                    return { id: tag, name: tag, slug: tag.toLowerCase() };
+                }
+                return {
+                    id: tag.id || "",
+                    name: tag.name || "",
+                    slug: tag.slug || "",
+                };
+            });
+        }
 
         const docRef = doc(db, COLLECTION_NAME, String(id));
         const updateData = {
             ...postData,
+            featuredImage: featuredImageData ?? null,
+            ...(formattedTags !== undefined ? { tags: formattedTags } : {}),
             updatedAt: serverTimestamp(),
             updatedAtTimestamp: Date.now(),
         };
@@ -240,5 +358,57 @@ export async function deletePost(id) {
     } catch (error) {
         console.error("deletePost error:", error);
         return { status: false, errorMessage: error.message };
+    }
+}
+
+/**
+ * Fetches all posts where author.uid matches the given user UID.
+ */
+export async function getPostsByAuthorUid(uid) {
+    try {
+        if (!uid) {
+            return {
+                status: false,
+                errorMessage: "Author UID is required",
+                data: [],
+            };
+        }
+
+        const collectionRef = collection(db, COLLECTION_NAME);
+
+        const q = query(
+            collectionRef,
+            where("author.uid", "==", uid)
+            // orderBy("createdAtTimestamp", "desc")
+        );
+
+        const querySnapshot = await getDocs(q);
+        console.log("UID:", uid);
+        console.log("Matched documents:", querySnapshot.size);
+
+        querySnapshot.forEach((docSnap) => {
+            console.log("Document:", docSnap.id, docSnap.data());
+        });
+        const posts = [];
+
+        querySnapshot.forEach((docSnap) => {
+            posts.push({
+                id: docSnap.id,
+                ...docSnap.data(),
+            });
+        });
+
+        return {
+            status: true,
+            data: posts,
+        };
+    } catch (error) {
+        console.error("getPostsByAuthorUid error:", error);
+
+        return {
+            status: false,
+            errorMessage: error.message || "Failed to get posts",
+            data: [],
+        };
     }
 }

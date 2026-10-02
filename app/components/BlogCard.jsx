@@ -1,44 +1,43 @@
-import Image from "next/image";
 import Link from "next/link";
 const BlogCard = ({ blog, variant }) => {
     if (variant === 'vertical') {
-        return (
+        // Resolve fields from Firestore structure
+        const verticalImageSrc = blog?.featuredImage?.displayUrl || blog?.featuredImage?.url || blog?.image || null;
+        const verticalAuthorName = typeof blog?.author === "string" ? blog.author : blog?.author?.name || "Unknown";
+        const verticalAuthorAvatar = blog?.author?.avatar || null;
+        const verticalDate = blog?.publishDate
+            ? new Date(blog.publishDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+            : blog?.publishedAt || "";
 
+        return (
             <article
                 className="article-item group flex flex-col items-start gap-4 rounded-xl bg-white p-4 shadow-sm transition-all hover:shadow-md md:flex-row lg:gap-6 lg:p-6"
-                data-cat="technology"
+                data-cat={blog?.category?.toLowerCase().replace(/\s+/g, "-") || "all"}
             >
                 {/* Article Image */}
                 <Link href={`/blog/${blog?.slug}`}>
                     <div className="relative h-48 w-full shrink-0 overflow-hidden rounded-lg bg-gray-100 md:h-44 md:w-72 lg:w-80">
-                        <Image
-                            alt={blog?.title}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            src={blog?.image}
-                            width={320}
-                            height={176}
-                        />
+                        {verticalImageSrc ? (
+                            <img
+                                alt={blog?.title || "Post image"}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                src={verticalImageSrc}
+                            />
+                        ) : (
+                            <div className="h-full w-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-[48px] text-blue-300">article</span>
+                            </div>
+                        )}
 
                         <span className="absolute left-2.5 top-2.5 rounded bg-white/90 px-2.5 py-1 text-xs font-semibold text-blue-600 shadow-sm backdrop-blur">
-                            {blog?.category}
+                            {blog?.category || "Uncategorized"}
                         </span>
-
                     </div>
                 </Link>
 
                 {/* Article Content */}
                 <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
                     <div>
-                        {/* Meta Info */}
-                        <div className="mb-1.5 flex items-center gap-3 text-xs font-medium text-gray-500">
-                            <span className="inline-flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[14px]">
-                                    schedule
-                                </span>
-                                {blog.readTime}
-                            </span>
-                        </div>
-
                         {/* Title */}
                         <Link href={`/blog/${blog.slug}`}>
                             <h2 className="line-clamp-2 text-xl font-bold text-gray-900 transition-colors group-hover:text-blue-600">
@@ -56,32 +55,37 @@ const BlogCard = ({ blog, variant }) => {
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-gray-100 pt-3">
                         {/* Author */}
                         <div className="flex items-center gap-2.5">
-                            <img
-                                alt="Irfat Uddin Ifti avatar"
-                                className="h-7 w-7 rounded-full object-cover"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoJRoLUBfzYJH7jutrOGj7WYtAmZXx8kqRf8SDU4w9rKnr97y_xCoAuQpllOaBuaSKgbLkiywP5LNT8c8GW2meLxMblEUAw7rkZ2Q5d4M8lerop7NwkZebtIQoaZtrIRcyLXaqmMw7tI46NdafE_eOu1QwELIZWukifuUQWtqIZQQo7OAfHr515Qfxgf6cnWKHlG9b1nMGYbMK5FcAypuHNQvrPXDrzuo9YsyunX1GDhwSRUFl1xY"
-                            />
+                            {verticalAuthorAvatar ? (
+                                <img
+                                    alt={verticalAuthorName}
+                                    className="h-7 w-7 rounded-full object-cover"
+                                    src={verticalAuthorAvatar}
+                                />
+                            ) : (
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white flex-shrink-0">
+                                    {verticalAuthorName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
+                                </span>
+                            )}
 
                             <div className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
-                                <span>{blog.author.name}</span>
-
+                                <span>{verticalAuthorName}</span>
                                 <span className="text-xs font-normal text-gray-500">
-                                    • {blog.publishedAt}
+                                    • {verticalDate}
                                 </span>
                             </div>
                         </div>
 
                         {/* Tags */}
                         <div className="flex items-center gap-1.5">
-                            {blog?.tags?.map((tag, i) => (
+                            {blog?.tags?.slice(0, 3).map((tag, i) => (
                                 <span key={i} className="cursor-pointer rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500 transition-colors hover:text-blue-600">
-                                    #{tag}
+                                    #{typeof tag === "object" ? tag.name : tag}
                                 </span>
                             ))}
                         </div>
                     </div>
                 </div>
-            </article >
+            </article>
         );
     }
 

@@ -12,6 +12,8 @@ import {
 } from "@/app/lib/api/tag";
 
 
+import LoadingSpinner from "@/app/components/LoadingSpinner";
+
 export default function TagManagement() {
     const { user, profile, loading } = useAuth();
     const router = useRouter();
@@ -29,12 +31,8 @@ export default function TagManagement() {
         }
     }, [loading, user, profile, router]);
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    if (!user || !profile || profile.role !== "admin") {
-        return <div>Loading...</div>;
+    if (loading || !user || !profile || profile.role !== "admin") {
+        return <LoadingSpinner fullScreen label="Loading tags manager..." size={42} />;
     }
     return (
         <TaxonomyManager

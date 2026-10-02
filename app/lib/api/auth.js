@@ -29,12 +29,6 @@ export async function login(email, password) {
         };
 
     } catch (error) {
-        console.error(
-            "Error [",
-            error.code,
-            "]:",
-            error.message
-        );
 
         return {
             status: false,
@@ -95,12 +89,6 @@ export async function signup(name, email, password) {
         };
 
     } catch (error) {
-        console.error(
-            "Error [",
-            error.code,
-            "]:",
-            error.message
-        );
 
         return {
             status: false,

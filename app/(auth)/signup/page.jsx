@@ -3,6 +3,7 @@ import { signup } from "@/app/lib/api/auth";
 import ShowToast from "@/app/lib/toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 const Page = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -45,13 +46,12 @@ const Page = () => {
                     {/* Header */}
                     <div className="mb-8 text-center">
 
-                        <a
+                        <Link
                             href="/"
                             className="mb-4 inline-block text-2xl font-bold tracking-tight text-gray-900"
                         >
-
                             NextLog
-                        </a>
+                        </Link>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
 
                             Create your account
@@ -150,11 +150,12 @@ const Page = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 cursor-pointer"
                         >
                             {loading ? (
                                 <>
-                                    Creating account...
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                    <span>Creating account...</span>
                                 </>
                             ) : (
                                 "Create account"
@@ -182,15 +183,13 @@ const Page = () => {
                     </button>
                     {/* Login Link */}
                     <p className="mt-6 text-center text-sm text-gray-500">
-
-                        Already have an account?
-                        <a
+                        Already have an account?{" "}
+                        <Link
                             href="/login"
                             className="font-medium text-blue-600 hover:text-blue-700"
                         >
-
                             Sign in
-                        </a>
+                        </Link>
                     </p>
                 </div>
             </div>

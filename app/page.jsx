@@ -121,12 +121,19 @@ export default function Home() {
           /* Loading Skeletons */
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse rounded-xl bg-white shadow-sm overflow-hidden">
-                <div className="h-48 bg-gray-200" />
-                <div className="p-6 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-full" />
-                  <div className="h-3 bg-gray-200 rounded w-5/6" />
+              <div key={i} className="animate-pulse rounded-xl bg-white shadow-sm flex flex-col overflow-hidden">
+                {/* Image placeholder */}
+                <div className="h-48 w-full flex-shrink-0 bg-gray-200" />
+                {/* Content placeholder */}
+                <div className="p-5 flex flex-col gap-3 flex-1">
+                  <div className="h-4 bg-gray-200 rounded-full w-3/4" />
+                  <div className="h-3 bg-gray-200 rounded-full w-full" />
+                  <div className="h-3 bg-gray-200 rounded-full w-5/6" />
+                  <div className="mt-auto pt-3 flex items-center gap-3">
+                    <div className="h-7 w-7 rounded-full bg-gray-200 flex-shrink-0" />
+                    <div className="h-3 bg-gray-200 rounded-full w-24" />
+                    <div className="ml-auto h-3 bg-gray-200 rounded-full w-16" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -166,13 +173,13 @@ export default function Home() {
         {/* Load More */}
         {!loading && !error && posts.length > 0 && (
           <div className="mt-8 text-center">
-            <a
-              href="#"
+            <Link
+              href="/blog"
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
             >
-              <span>Load More Articles</span>
-              <span className="material-symbols-outlined text-[18px]">expand_more</span>
-            </a>
+              <span>See More Articles</span>
+              <span className="material-symbols-outlined text-[18px]">read_more</span>
+            </Link>
           </div>
         )}
       </section>

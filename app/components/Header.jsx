@@ -8,6 +8,10 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/context/AuthProvider";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/services/firebase";
+import { motion, AnimatePresence } from "framer-motion";
+import ConfirmationModal from "@/app/components/ConfirmationModal";
+import ShowToast from "@/app/lib/toast";
+import AvatarPlaceholder from "@/public/user.jpg";
 
 const navItems = [
     { name: "Home", href: "/" },
@@ -20,6 +24,8 @@ const Header = () => {
     const router = useRouter();
     const { user, profile, loading } = useAuth();
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [showSignOutModal, setShowSignOutModal] = useState(false);
+    const [signingOut, setSigningOut] = useState(false);
     const dropdownRef = useRef(null);
 
     // Close dropdown on outside click
@@ -33,10 +39,18 @@ const Header = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleLogout = async () => {
-        setDropdownOpen(false);
-        await signOut(auth);
-        router.push("/");
+    const confirmLogout = async () => {
+        try {
+            setSigningOut(true);
+            await signOut(auth);
+            ShowToast({ message: "Signed out successfully", type: "success" });
+            setShowSignOutModal(false);
+            router.push("/");
+        } catch (err) {
+            ShowToast({ message: err.message || "Failed to sign out", type: "error" });
+        } finally {
+            setSigningOut(false);
+        }
     };
 
     // Avatar: prefer Firestore avatar, then Firebase Auth photoURL, then initials
@@ -111,7 +125,7 @@ const Header = () => {
                         /* ── Logged-in: Write Post + Avatar Dropdown ── */
                         <div className="flex items-center gap-3">
                             <Link
-                                href="/dashboard/new"
+                                href="/dashboard/create-post"
                                 className="hidden items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 sm:inline-flex"
                             >
                                 <span className="material-symbols-outlined text-[18px]">add</span>
@@ -134,9 +148,13 @@ const Header = () => {
                                             className="h-8 w-8 rounded-full object-cover"
                                         />
                                     ) : (
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-                                            {initials}
-                                        </span>
+                                        <Image
+                                            src={AvatarPlaceholder.src}
+                                            alt={displayName}
+                                            width={32}
+                                            height={32}
+                                            className="h-8 w-8 rounded-full object-cover"
+                                        />
                                     )}
                                     <span
                                         className={`material-symbols-outlined text-[18px] text-gray-400 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
@@ -145,92 +163,101 @@ const Header = () => {
                                     </span>
                                 </button>
 
-                                {/* Dropdown Panel */}
-                                {dropdownOpen && (
-                                    <div
-                                        id="user-dropdown"
-                                        className="absolute right-0 mt-2 w-60 origin-top-right rounded-xl border border-gray-100 bg-white shadow-xl ring-1 ring-black/5 animate-[fadeIn_0.15s_ease-out]"
-                                        role="menu"
-                                        aria-labelledby="user-menu-button"
-                                    >
-                                        {/* User Info */}
-                                        <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
-                                            {avatarSrc ? (
-                                                <img
-                                                    src={avatarSrc}
-                                                    alt={displayName}
-                                                    className="h-10 w-10 rounded-full object-cover flex-shrink-0"
-                                                />
-                                            ) : (
-                                                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-                                                    {initials}
-                                                </span>
-                                            )}
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold text-gray-900">
-                                                    {displayName}
-                                                </p>
-                                                <p className="truncate text-xs text-gray-400">{email}</p>
-                                                <span className="mt-0.5 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium capitalize text-blue-600">
-                                                    {role}
-                                                </span>
+                                {/* Dropdown Panel with Framer Motion */}
+                                <AnimatePresence>
+                                    {dropdownOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                                            transition={{ duration: 0.15, ease: "easeOut" }}
+                                            id="user-dropdown"
+                                            className="absolute right-0 mt-2 w-60 origin-top-right rounded-xl border border-gray-100 bg-white shadow-xl ring-1 ring-black/5"
+                                            role="menu"
+                                            aria-labelledby="user-menu-button"
+                                        >
+                                            {/* User Info */}
+                                            <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
+                                                {avatarSrc ? (
+                                                    <img
+                                                        src={avatarSrc}
+                                                        alt={displayName}
+                                                        className="h-10 w-10 rounded-full object-cover flex-shrink-0"
+                                                    />
+                                                ) : (
+                                                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                                                        {initials}
+                                                    </span>
+                                                )}
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-semibold text-gray-900">
+                                                        {displayName}
+                                                    </p>
+                                                    <p className="truncate text-xs text-gray-400">{email}</p>
+                                                    <span className="mt-0.5 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium capitalize text-blue-600">
+                                                        {role}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        {/* Menu Items */}
-                                        <div className="py-1" role="none">
-                                            <Link
-                                                href="/dashboard"
-                                                onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
-                                                role="menuitem"
-                                            >
-                                                <span className="material-symbols-outlined text-[18px]">
-                                                    dashboard
-                                                </span>
-                                                Dashboard
-                                            </Link>
+                                            {/* Menu Items */}
+                                            <div className="py-1" role="none">
+                                                <Link
+                                                    href="/dashboard"
+                                                    onClick={() => setDropdownOpen(false)}
+                                                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
+                                                    role="menuitem"
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">
+                                                        dashboard
+                                                    </span>
+                                                    Dashboard
+                                                </Link>
 
-                                            <Link
-                                                href="/dashboard/profile"
-                                                onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
-                                                role="menuitem"
-                                            >
-                                                <span className="material-symbols-outlined text-[18px]">
-                                                    person
-                                                </span>
-                                                My Profile
-                                            </Link>
+                                                <Link
+                                                    href="/dashboard/profile"
+                                                    onClick={() => setDropdownOpen(false)}
+                                                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
+                                                    role="menuitem"
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">
+                                                        person
+                                                    </span>
+                                                    My Profile
+                                                </Link>
 
-                                            <Link
-                                                href="/dashboard/new"
-                                                onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
-                                                role="menuitem"
-                                            >
-                                                <span className="material-symbols-outlined text-[18px]">
-                                                    edit_note
-                                                </span>
-                                                Write Post
-                                            </Link>
-                                        </div>
+                                                <Link
+                                                    href="/dashboard/create-post"
+                                                    onClick={() => setDropdownOpen(false)}
+                                                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
+                                                    role="menuitem"
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">
+                                                        edit_note
+                                                    </span>
+                                                    Write Post
+                                                </Link>
+                                            </div>
 
-                                        {/* Logout */}
-                                        <div className="border-t border-gray-100 py-1" role="none">
-                                            <button
-                                                onClick={handleLogout}
-                                                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 cursor-pointer"
-                                                role="menuitem"
-                                            >
-                                                <span className="material-symbols-outlined text-[18px]">
-                                                    logout
-                                                </span>
-                                                Sign Out
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
+                                            {/* Logout */}
+                                            <div className="border-t border-gray-100 py-1" role="none">
+                                                <button
+                                                    onClick={() => {
+                                                        setDropdownOpen(false);
+                                                        setShowSignOutModal(true);
+                                                    }}
+                                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                                                    role="menuitem"
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">
+                                                        logout
+                                                    </span>
+                                                    Sign Out
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                     ) : (
@@ -252,6 +279,20 @@ const Header = () => {
                     )}
                 </div>
             </div>
+
+            {/* Sign Out Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showSignOutModal}
+                onClose={() => !signingOut && setShowSignOutModal(false)}
+                onConfirm={confirmLogout}
+                title="Sign Out"
+                message="Are you sure you want to sign out of your NextLog account?"
+                confirmText="Sign Out"
+                cancelText="Stay logged in"
+                variant="danger"
+                icon="logout"
+                isLoading={signingOut}
+            />
         </header>
     );
 };
