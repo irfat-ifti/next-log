@@ -6,27 +6,36 @@ import ShowToast from "@/app/lib/toast"
 import AvatarPlaceholder from "@/public/user.jpg"
 import { serverTimestamp } from "firebase/firestore"
 import Image from "next/image"
+import { span } from "framer-motion/client"
+import LoadingSpinner from "@/app/components/LoadingSpinner"
+import { deleteCommentById } from "@/app/lib/api/comment";
+
 
 const Comments = ({ blog, comments }) => {
-    const { user, profile } = useAuth()
+    const { user, profile, loading } = useAuth()
     const [commentList, setCommentList] = useState(comments)
     const [newComment, setNewComment] = useState('')
+    const [mounted, setMounted] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+
     useEffect(() => {
+        setMounted(true)
         setCommentList(comments)
     }, [comments])
+
     const handleChange = (e) => {
         setNewComment(e.target.value)
     }
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
+        e.preventDefault()
         if (!user) {
-            ShowToast("Please login to comment", "error")
+            ShowToast({ message: "Please login to comment", type: "error" });
             return
         }
         if (!newComment) {
-            ShowToast("error", "Please enter a comment")
+            ShowToast({ message: "Please enter a comment", type: "error" });
             return
         }
-        e.preventDefault()
         const newCommentData = {
             postId: blog.id,
             content: newComment,
@@ -36,11 +45,31 @@ const Comments = ({ blog, comments }) => {
                 avatar: profile.avatar || user.photoURL,
             },
             createdAt: new Date().toISOString(),
-            updatedAt: serverTimestamp(),
+            updatedAt: new Date().toISOString(),
         }
-        addComment(newCommentData)
-        setCommentList((prev) => [...prev, newCommentData])
-        setNewComment("")
+        console.log("newCommentData", newCommentData);
+        setSubmitting(true);
+        const result = await addComment(newCommentData);
+        setSubmitting(false);
+        if (result.status) {
+            setCommentList((prev) => [newCommentData, ...prev]);
+            setNewComment("");
+        } else {
+            ShowToast({ message: "Failed to add comment", type: "error" });
+        }
+    }
+    const handleCommentDelete = async (commentId, currentUserId, postAuthorId, currentUserRole) => {
+        try {
+            const result = await deleteCommentById(commentId, currentUserId, postAuthorId, currentUserRole);
+            if (result.status) {
+                setCommentList((prev) => prev.filter((comment) => comment.id !== commentId));
+                ShowToast({ message: "Comment deleted successfully", type: "success" });
+            } else {
+                ShowToast({ message: "Failed to delete comment", type: "error" });
+            }
+        } catch (error) {
+            ShowToast({ message: "Failed to delete comment", type: "error" });
+        }
     }
     function timeAgo(timestamp) {
         if (!timestamp) return "";
@@ -103,7 +132,27 @@ const Comments = ({ blog, comments }) => {
                 </h3>
             </div>
             {/* Write a Comment Form Box */}
-            {blog.allowComments ? (
+            {loading ? <LoadingSpinner /> : !user ? <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50 to-white px-6 py-8 text-center shadow-sm">
+                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100">
+                    <svg
+                        className="h-5 w-5 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m-9 4 3.5-3H17a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v6a4 4 0 0 0 4 4h.5L6 20Z"
+                        />
+                    </svg>
+                </div>
+
+                <p className="text-sm font-semibold text-gray-700">
+                    You must login to comment.
+                </p>
+            </div> : blog.allowComments ? (
                 <div className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
                     <div className="flex items-start gap-3">
                         <img
@@ -129,11 +178,12 @@ const Comments = ({ blog, comments }) => {
                                 </span>
 
                                 <button
-                                    className="self-end rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 sm:self-auto"
+                                    className="self-end rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 sm:self-auto disabled:opacity-50 disabled:cursor-not-allowed"
                                     id="submitCommentBtn"
                                     type="submit"
+                                    disabled={submitting}
                                 >
-                                    Submit Comment
+                                    {submitting ? <LoadingSpinner size={16} color="#fff" inline={true} label="Submitting..." /> : "Submit Comment"}
                                 </button>
                             </div>
                         </form>
@@ -184,7 +234,7 @@ const Comments = ({ blog, comments }) => {
                                         </span>
 
                                         <span className="text-xs font-medium text-gray-500">
-                                            · {timeAgo(comment.createdAt)}
+                                            · {mounted ? timeAgo(comment.createdAt) : ""}
                                         </span>
                                     </div>
 
@@ -193,16 +243,30 @@ const Comments = ({ blog, comments }) => {
                                     </span> */}
                                 </div>
                             </div>
+                            {(
+                                user?.uid === comment.author?.uid ||
+                                user?.uid === blog?.author?.uid ||
+                                user?.role === "admin"
+                            ) && (
+                                    <button
+                                        className="rounded p-1 text-gray-500 transition-colors hover:text-red-400 cursor-pointer"
+                                        title="Delete comment"
+                                        type="button"
+                                        onClick={() =>
+                                            handleCommentDelete(
+                                                comment.id,
+                                                user?.uid,
+                                                blog?.author?.uid,
+                                                user?.role
+                                            )
+                                        }
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">
+                                            Delete
+                                        </span>
+                                    </button>
+                                )}
 
-                            <button
-                                className="rounded p-1 text-gray-500 transition-colors hover:text-gray-900"
-                                title="More actions"
-                                type="button"
-                            >
-                                <span className="material-symbols-outlined text-[18px]">
-                                    more_horiz
-                                </span>
-                            </button>
                         </div>
 
                         <p className="pl-11 text-base text-gray-900">

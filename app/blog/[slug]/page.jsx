@@ -68,8 +68,11 @@ const Page = async ({ params }) => {
         return data;
     };
 
-    const commentsRes = await getCommentsByPostId(blog.id);
-    const comments = commentsRes.data;
+    let comments = [];
+    if (blog?.id) {
+        const commentsRes = await getCommentsByPostId(blog.id);
+        comments = commentsRes?.data || [];
+    }
 
     const serializedBlog = serializeFirestoreData(blog);
     const serializedComments = serializeFirestoreData(comments);
