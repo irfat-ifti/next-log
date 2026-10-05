@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
 import { useAuth } from "@/app/context/AuthProvider";
@@ -114,17 +115,15 @@ export default function DashboardLayout({ children }) {
                             className="flex items-center justify-between rounded-xl p-2.5 transition-colors hover:bg-gray-50 group"
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                {avatarSrc ? (
-                                    <img
+                                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-blue-100">
+                                    <Image
                                         alt={displayName}
-                                        className="h-9 w-9 rounded-full object-cover ring-2 ring-blue-100 shrink-0"
-                                        src={avatarSrc}
+                                        className="object-cover"
+                                        src={avatarSrc || "/user.jpg"}
+                                        fill
+                                        sizes="36px"
                                     />
-                                ) : (
-                                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shrink-0">
-                                        {initials}
-                                    </span>
-                                )}
+                                </div>
                                 <div className="leading-tight min-w-0 flex-1">
                                     <p className="truncate text-sm font-semibold text-gray-900 group-hover:text-blue-600">
                                         {displayName}
@@ -140,6 +139,31 @@ export default function DashboardLayout({ children }) {
                         </Link>
                     </div>
                 </aside>
+
+                {/* Mobile Dashboard Navigation Tabs */}
+                <div className="flex md:hidden border-b border-gray-200 bg-white sticky top-16 z-20 w-full overflow-x-auto px-3 py-2.5 shadow-xs">
+                    <div className="flex items-center gap-1 min-w-full">
+                        {navItems.map((item) => {
+                            const active = isTabActive(item.href);
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        active
+                                            ? "bg-blue-600 text-white shadow-xs"
+                                            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                    }`}
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">
+                                        {item.icon}
+                                    </span>
+                                    <span>{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
 
                 {/* Main Content Area */}
                 <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">

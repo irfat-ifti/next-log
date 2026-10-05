@@ -8,8 +8,8 @@ import { serverTimestamp } from "firebase/firestore"
 import Image from "next/image"
 import { span } from "framer-motion/client"
 import LoadingSpinner from "@/app/components/LoadingSpinner"
-import { deleteCommentById } from "@/app/lib/api/comment";
-
+import ConfirmationModal from "@/app/components/ConfirmationModal"
+import { deleteCommentById } from "@/app/lib/api/comment"
 
 const Comments = ({ blog, comments }) => {
     const { user, profile, loading } = useAuth()
@@ -17,6 +17,8 @@ const Comments = ({ blog, comments }) => {
     const [newComment, setNewComment] = useState('')
     const [mounted, setMounted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [commentToDelete, setCommentToDelete] = useState(null);
+    const [deletingComment, setDeletingComment] = useState(false);
 
     useEffect(() => {
         setMounted(true)
@@ -58,19 +60,33 @@ const Comments = ({ blog, comments }) => {
             ShowToast({ message: "Failed to add comment", type: "error" });
         }
     }
-    const handleCommentDelete = async (commentId, currentUserId, postAuthorId, currentUserRole) => {
+    const requestDeleteComment = (commentId) => {
+        setCommentToDelete(commentId);
+    };
+
+    const confirmDeleteComment = async () => {
+        if (!commentToDelete) return;
         try {
-            const result = await deleteCommentById(commentId, currentUserId, postAuthorId, currentUserRole);
+            setDeletingComment(true);
+            const result = await deleteCommentById(
+                commentToDelete,
+                user?.uid,
+                blog?.author?.uid,
+                user?.role
+            );
             if (result.status) {
-                setCommentList((prev) => prev.filter((comment) => comment.id !== commentId));
+                setCommentList((prev) => prev.filter((comment) => comment.id !== commentToDelete));
                 ShowToast({ message: "Comment deleted successfully", type: "success" });
+                setCommentToDelete(null);
             } else {
                 ShowToast({ message: "Failed to delete comment", type: "error" });
             }
         } catch (error) {
             ShowToast({ message: "Failed to delete comment", type: "error" });
+        } finally {
+            setDeletingComment(false);
         }
-    }
+    };
     function timeAgo(timestamp) {
         if (!timestamp) return "";
 
@@ -131,38 +147,48 @@ const Comments = ({ blog, comments }) => {
                     </span>
                 </h3>
             </div>
-            {/* Write a Comment Form Box */}
-            {loading ? <LoadingSpinner /> : !user ? <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50 to-white px-6 py-8 text-center shadow-sm">
-                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100">
-                    <svg
-                        className="h-5 w-5 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={1.8}
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m-9 4 3.5-3H17a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v6a4 4 0 0 0 4 4h.5L6 20Z"
-                        />
-                    </svg>
-                </div>
 
-                <p className="text-sm font-semibold text-gray-700">
-                    You must login to comment.
-                </p>
-            </div> : blog.allowComments ? (
+            {loading ? (
+                <LoadingSpinner />
+            ) : !user ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50 to-white px-6 py-8 text-center shadow-sm">
+                    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100">
+                        <svg
+                            className="h-5 w-5 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.8}
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m-9 4 3.5-3H17a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v6a4 4 0 0 0 4 4h.5L6 20Z"
+                            />
+                        </svg>
+                    </div>
+
+                    <p className="text-sm font-semibold text-gray-700">
+                        You must login to comment.
+                    </p>
+                </div>
+            ) : blog.allowComments ? (
                 <div className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
                     <div className="flex items-start gap-3">
-                        <img
-                            alt="Current User Avatar"
-                            className="h-9 w-9 shrink-0 rounded-full object-cover shadow-sm"
-                            src={profile?.avatar || user?.photoURL || AvatarPlaceholder.src}
-                        />
+                        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full shadow-sm">
+                            <Image
+                                alt="Current User Avatar"
+                                fill
+                                sizes="36px"
+                                className="object-cover"
+                                src={profile?.avatar || user?.photoURL || AvatarPlaceholder.src}
+                            />
+                        </div>
 
                         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
-                            <textarea value={newComment} onChange={handleChange}
+                            <textarea
+                                value={newComment}
+                                onChange={handleChange}
                                 className="w-full resize-y rounded-lg p-3 text-base placeholder:text-gray-500 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 id="newCommentInput"
                                 placeholder="Share your thoughts or ask a question..."
@@ -188,44 +214,41 @@ const Comments = ({ blog, comments }) => {
                             </div>
                         </form>
                     </div>
-                </div>) : (<>
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50 to-white px-6 py-8 text-center shadow-sm">
-                        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100">
-                            <svg
-                                className="h-5 w-5 text-gray-400"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={1.8}
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m-9 4 3.5-3H17a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v6a4 4 0 0 0 4 4h.5L6 20Z"
-                                />
-                            </svg>
-                        </div>
-
-                        <p className="text-sm font-semibold text-gray-700">
-                            Comments are currently turned off
-                        </p>
-
-                        <p className="mt-1 max-w-xs text-xs leading-5 text-gray-400">
-                            The author has disabled comments for this post.
-                        </p>
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50 to-white px-6 py-8 text-center shadow-sm">
+                    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100">
+                        <svg
+                            className="h-5 w-5 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.8}
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m-9 4 3.5-3H17a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v6a4 4 0 0 0 4 4h.5L6 20Z"
+                            />
+                        </svg>
                     </div>
 
-                </>)}
+                    <p className="text-sm font-semibold text-gray-700">
+                        Comments are currently turned off
+                    </p>
 
-            {/* Existing Comments Thread */}
+                    <p className="mt-1 max-w-xs text-xs leading-5 text-gray-400">
+                        The author has disabled comments for this post.
+                    </p>
+                </div>
+            )}
+
             <div className="flex flex-col gap-4" id="commentsContainer">
-
-                {/* Comment 1: Mark Davis */}
                 {commentList.map((comment, idx) => (
                     <div key={idx} className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
                         <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                                <Image src={comment.author.avatar || AvatarPlaceholder.src} alt="" width={36} height={36} />
+                                <Image src={comment.author.avatar || AvatarPlaceholder.src} alt="" width={36} height={36} className="rounded-full" />
 
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
@@ -237,10 +260,6 @@ const Comments = ({ blog, comments }) => {
                                             · {mounted ? timeAgo(comment.createdAt) : ""}
                                         </span>
                                     </div>
-
-                                    {/* <span className="text-xs font-medium text-gray-500">
-                                        Frontend Architect
-                                    </span> */}
                                 </div>
                             </div>
                             {(
@@ -252,14 +271,7 @@ const Comments = ({ blog, comments }) => {
                                         className="rounded p-1 text-gray-500 transition-colors hover:text-red-400 cursor-pointer"
                                         title="Delete comment"
                                         type="button"
-                                        onClick={() =>
-                                            handleCommentDelete(
-                                                comment.id,
-                                                user?.uid,
-                                                blog?.author?.uid,
-                                                user?.role
-                                            )
-                                        }
+                                        onClick={() => requestDeleteComment(comment.id)}
                                     >
                                         <span className="material-symbols-outlined text-[18px]">
                                             Delete
@@ -272,176 +284,23 @@ const Comments = ({ blog, comments }) => {
                         <p className="pl-11 text-base text-gray-900">
                             {comment.content}
                         </p>
-
-                        {/* <div className="flex items-center gap-4 pl-11 text-xs font-medium text-gray-500">
-                            <button
-                                className="flex items-center gap-1 transition-colors hover:text-blue-600"
-                                type="button"
-                            >
-                                <span className="material-symbols-outlined text-[16px]">
-                                    thumb_up
-                                </span>
-                                <span>12</span>
-                            </button>
-
-                            <button
-                                className="flex items-center gap-1 transition-colors hover:text-blue-600"
-                                type="button"
-                            >
-                                <span className="material-symbols-outlined text-[16px]">
-                                    reply
-                                </span>
-                                <span>Reply</span>
-                            </button>
-                        </div> */}
                     </div>
                 ))}
-                <div className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-sm">
-                                MD
-                            </div>
-
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold text-gray-900">
-                                        Mark Davis
-                                    </span>
-
-                                    <span className="text-xs font-medium text-gray-500">
-                                        · 2 days ago
-                                    </span>
-                                </div>
-
-                                <span className="text-xs font-medium text-gray-500">
-                                    Frontend Architect
-                                </span>
-                            </div>
-                        </div>
-
-                        <button
-                            className="rounded p-1 text-gray-500 transition-colors hover:text-gray-900"
-                            title="More actions"
-                            type="button"
-                        >
-                            <span className="material-symbols-outlined text-[18px]">
-                                more_horiz
-                            </span>
-                        </button>
-                    </div>
-
-                    <p className="pl-11 text-base text-gray-900">
-                        Great breakdown of Server vs Client components! Super helpful for
-                        anyone migrating from the Pages router. The architecture diagram
-                        made the prop serialization flow instantly clear.
-                    </p>
-
-                    <div className="flex items-center gap-4 pl-11 text-xs font-medium text-gray-500">
-                        <button
-                            className="flex items-center gap-1 transition-colors hover:text-blue-600"
-                            type="button"
-                        >
-                            <span className="material-symbols-outlined text-[16px]">
-                                thumb_up
-                            </span>
-                            <span>12</span>
-                        </button>
-
-                        <button
-                            className="flex items-center gap-1 transition-colors hover:text-blue-600"
-                            type="button"
-                        >
-                            <span className="material-symbols-outlined text-[16px]">
-                                reply
-                            </span>
-                            <span>Reply</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Comment 2: Current User / Author with Delete Action */}
-                {/* <div
-                    className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-blue-600/20"
-                    id="authorCommentRow"
-                >
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <img
-                                alt="Irfat Uddin Ifti"
-                                className="h-9 w-9 rounded-full object-cover shadow-sm ring-2 ring-blue-600"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoJRoLUBfzYJH7jutrOGj7WYtAmZXx8kqRf8SDU4w9rKnr97y_xCoAuQpllOaBuaSKgbLkiywP5LNT8c8GW2meLxMblEUAw7rkZ2Q5d4M8lerop7NwkZebtIQoaZtrIRcyLXaqmMw7tI46NdafE_eOu1QwELIZWukifuUQWtqIZQQo7OAfHr515Qfxgf6cnWKHlG9b1nMGYbMK5FcAypuHNQvrPXDrzuo9YsyunX1GDhwSRUFl1xY"
-                            />
-
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold text-gray-900">
-                                        Irfat Uddin Ifti
-                                    </span>
-
-                                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-blue-600">
-                                        Author
-                                    </span>
-
-                                    <span className="text-xs font-medium text-gray-500">
-                                        · 1 day ago
-                                    </span>
-                                </div>
-
-                                <span className="text-xs font-medium text-gray-500">
-                                    Software Engineer
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                            <button
-                                className="inline-flex items-center gap-1 rounded-lg p-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                                id="deleteAuthorCommentBtn"
-                                title="Delete comment"
-                                type="button"
-                            >
-                                <span className="material-symbols-outlined text-[18px]">
-                                    delete
-                                </span>
-
-                                <span className="hidden sm:inline">Delete</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <p className="pl-11 text-base text-gray-900">
-                        Thanks Mark! In the next article we&apos;ll cover Server Actions with
-                        form mutations and optimistic cache revalidations via{" "}
-                        <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-900">
-                            revalidatePath()
-                        </code>
-                        . Stay tuned!
-                    </p>
-
-                    <div className="flex items-center gap-4 pl-11 text-xs font-medium text-gray-500">
-                        <button
-                            className="flex items-center gap-1 transition-colors hover:text-blue-600"
-                            type="button"
-                        >
-                            <span className="material-symbols-outlined text-[16px]">
-                                thumb_up
-                            </span>
-                            <span>5</span>
-                        </button>
-
-                        <button
-                            className="flex items-center gap-1 transition-colors hover:text-blue-600"
-                            type="button"
-                        >
-                            <span className="material-symbols-outlined text-[16px]">
-                                reply
-                            </span>
-                            <span>Reply</span>
-                        </button>
-                    </div>
-                </div> */}
             </div>
+
+            {/* Delete Comment Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={Boolean(commentToDelete)}
+                onClose={() => !deletingComment && setCommentToDelete(null)}
+                onConfirm={confirmDeleteComment}
+                title="Delete Comment"
+                message="Are you sure you want to delete this comment? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                icon="delete"
+                isLoading={deletingComment}
+            />
         </section>
     );
 }

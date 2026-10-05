@@ -7,6 +7,7 @@ import { getTags } from "@/app/lib/api/tag";
 import TagSelector from "@/app/dashboard/components/TagSelector";
 import ShowToast from "@/app/lib/toast";
 import { isSlugAvailable, sanitizeSlug } from "@/app/lib/slug";
+import Image from "next/image";
 
 const LeftColumn = ({
     setContent,
@@ -379,11 +380,14 @@ const LeftColumn = ({
                         {imagePreview ? (
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                                 {/* Image preview */}
-                                <div className="relative w-56 h-32 shrink-0">
-                                    <img
+                                <div className="relative w-56 h-32 shrink-0 overflow-hidden rounded-lg border border-slate-200">
+                                    <Image
                                         src={imagePreview}
                                         alt="Featured post preview"
-                                        className="w-full h-full object-cover rounded-lg border border-slate-200"
+                                        fill
+                                        sizes="224px"
+                                        unoptimized
+                                        className="object-cover"
                                     />
 
                                     <button

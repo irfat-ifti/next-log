@@ -2,11 +2,21 @@
 import { signup } from "@/app/lib/api/auth";
 import ShowToast from "@/app/lib/toast";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "@/app/context/AuthProvider";
+
 const Page = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { user } = useAuth();
+
+    useEffect(() => {
+        if (user) {
+            router.replace("/dashboard/profile");
+        }
+    }, [user, router]);
+
     const handleSignup = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -17,25 +27,20 @@ const Page = () => {
         const confirmPassword = formData.get("confirmPassword");
         if (password !== confirmPassword) {
             ShowToast({ message: "Password and confirm password do not match", type: "error" });
+            setLoading(false);
             return;
         }
         const response = await signup(name, email, password);
-        console.log("response", response);
         setLoading(false);
         if (response.error) {
             ShowToast({ message: response.error, type: "error" });
         } else {
             ShowToast({ message: response.message, type: "success" });
-            success();
+            router.push("/dashboard/profile");
+            router.refresh();
         }
     };
-    const success = () => {
-        document.getElementById("name").value = "";
-        document.getElementById("email").value = "";
-        document.getElementById("password").value = "";
-        document.getElementById("confirmPassword").value = "";
-        router.push("/dashboard/profile");
-    };
+
     return (
         <main className="min-h-screen bg-gray-50 px-4 py-16">
 
@@ -162,25 +167,6 @@ const Page = () => {
                             )}
                         </button>
                     </form>
-                    {/* Divider */}
-                    <div className="my-6 flex items-center gap-3">
-
-                        <div className="h-px flex-1 bg-gray-200" />
-                        <span className="text-xs text-gray-400">OR</span>
-                        <div className="h-px flex-1 bg-gray-200" />
-                    </div>
-                    {/* Google Signup */}
-                    <button
-                        type="button"
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                    >
-
-                        <span className="material-symbols-outlined text-[18px]">
-
-                            login
-                        </span>
-                        Continue with Google
-                    </button>
                     {/* Login Link */}
                     <p className="mt-6 text-center text-sm text-gray-500">
                         Already have an account?{" "}

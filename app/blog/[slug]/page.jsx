@@ -11,28 +11,55 @@ const getPost = cache(async (slug) => {
     return await getPostBySlug(slug)
 })
 export async function generateMetadata({ params }) {
-    const { slug } = await params
-    const res = await getPost(slug)
-    const blog = res?.data
+    const { slug } = await params;
+    const res = await getPost(slug);
+    const blog = res?.data;
     if (!blog) {
         notFound();
     }
+
+    const title = blog.metaTitle || blog.title;
+    const description = blog.metaDesc || blog.excerpt;
+    const imageUrl = blog?.featuredImage?.displayUrl || blog?.featuredImage?.url || "/screen.png";
+    const authorName = typeof blog?.author === "object" ? blog?.author?.name : blog?.author || "NextLog Author";
+
     return {
-        title: blog.metaTitle || blog.title,
-        description: blog.metaDesc || blog.excerpt,
-
-        openGraph: {
-            title: blog.metaTitle || blog.title,
-            description: blog.metaDesc || blog.excerpt,
-            images: blog?.featuredImage?.url ? [{ url: blog?.featuredImage?.url, width: 800, height: 600, alt: blog.title }] : [],
-            type: "article",
+        title: title,
+        description: description,
+        keywords: Array.isArray(blog.keywords) ? blog.keywords : [],
+        alternates: {
+            canonical: `/blog/${slug}`,
         },
-
+        openGraph: {
+            title: title,
+            description: description,
+            url: `/blog/${slug}`,
+            images: [
+                {
+                    url: imageUrl,
+                    width: 1200,
+                    height: 630,
+                    alt: blog.title,
+                },
+            ],
+            type: "article",
+            publishedTime: blog.publishDate
+                ? (typeof blog.publishDate?.toDate === "function" ? blog.publishDate.toDate().toISOString() : !isNaN(new Date(blog.publishDate).getTime()) ? new Date(blog.publishDate).toISOString() : undefined)
+                : undefined,
+            modifiedTime: blog.updatedAt
+                ? (typeof blog.updatedAt?.toDate === "function" ? blog.updatedAt.toDate().toISOString() : !isNaN(new Date(blog.updatedAt).getTime()) ? new Date(blog.updatedAt).toISOString() : undefined)
+                : undefined,
+            authors: [authorName],
+            tags: Array.isArray(blog.tags)
+                ? blog.tags.map((t) => (typeof t === "object" ? t.name : t))
+                : [],
+        },
         twitter: {
             card: "summary_large_image",
-            title: blog.metaTitle || blog.title,
-            description: blog.metaDesc || blog.excerpt,
-            images: blog?.featuredImage?.url ? [{ url: blog?.featuredImage?.url, width: 800, height: 600, alt: blog.title }] : [],
+            title: title,
+            description: description,
+            images: [imageUrl],
+            creator: "@nextlog",
         },
     };
 }
@@ -81,6 +108,9 @@ const Page = async ({ params }) => {
     const authorName =
         typeof blog?.author === "object" ? blog?.author?.name : "";
 
+    const authorUid =
+        typeof blog?.author === "object" ? blog?.author?.uid : "";
+
     const authorAvatar =
         typeof blog?.author === "object" && blog?.author?.avatar
             ? blog?.author?.avatar
@@ -105,12 +135,61 @@ const Page = async ({ params }) => {
             })
             : blog?.publishedAt || "Recently";
 
-    const readingTime = blog?.readTime || "5 min read";
+    const safeIsoDate = (val) => {
+        if (!val) return new Date().toISOString();
+        if (typeof val?.toDate === "function") return val.toDate().toISOString();
+        if (typeof val === "number") {
+            const ms = val < 1e11 ? val * 1000 : val;
+            return new Date(ms).toISOString();
+        }
+        const parsed = new Date(val);
+        return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+    };
+
     const postDescription = blog?.excerpt || blog?.description || "";
     const categoryName = blog?.category || "Uncategorized";
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://next-log.vercel.app";
+    const postUrl = `${siteUrl}/blog/${slug}`;
+    const postImage = blog?.featuredImage?.displayUrl || blog?.featuredImage?.url || `${siteUrl}/screen.png`;
+
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": blog.title,
+        "description": postDescription,
+        "image": [postImage],
+        "datePublished": safeIsoDate(blog.publishDate || blog.createdAt),
+        "dateModified": safeIsoDate(blog.updatedAt || blog.publishDate || blog.createdAt),
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": postUrl,
+        },
+        "author": {
+            "@type": "Person",
+            "name": authorName || "NextLog Author",
+            "url": authorUid ? `${siteUrl}/author/${authorUid}` : siteUrl,
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "NextLog",
+            "logo": {
+                "@type": "ImageObject",
+                "url": `${siteUrl}/screen.png`,
+            },
+        },
+        "keywords": Array.isArray(blog.keywords) ? blog.keywords.join(", ") : "",
+        "articleSection": categoryName,
+    };
+
     return (
         <div className='my-25'>
+            {/* JSON-LD Structured Data for Search Engines */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+
             <div className="mx-auto w-full max-w-6xl px-4">
                 <nav
                     aria-label="Breadcrumb"
@@ -147,9 +226,12 @@ const Page = async ({ params }) => {
                 <header className="flex flex-col gap-4 mt-8">
                     {/* Category & Subcategory */}
                     <div className="flex items-center gap-3">
-                        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-blue-600">
+                        <Link
+                            href={`/blog?category=${encodeURIComponent((categoryName || "").toLowerCase().trim().replace(/\s+/g, "-"))}`}
+                            className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-blue-600 hover:bg-blue-100 transition"
+                        >
                             {categoryName}
-                        </span>
+                        </Link>
 
                         <span className="h-1 w-1 rounded-full bg-gray-400" />
 
@@ -172,92 +254,82 @@ const Page = async ({ params }) => {
                     <div className="flex flex-col justify-between gap-4 border-t border-gray-100 pt-4 sm:flex-row sm:items-center">
                         {/* Author */}
                         <div className="flex items-center gap-3">
-                            {authorAvatar ? (
-                                <img
-                                    alt={authorName}
-                                    className="h-11 w-11 rounded-full object-cover shadow-sm ring-2 ring-white"
-                                    src={authorAvatar}
-                                />
+                            {authorUid ? (
+                                <Link href={`/author/${authorUid}`} className="group/author flex items-center gap-3">
+                                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full shadow-sm ring-2 ring-white group-hover/author:ring-blue-600 transition">
+                                        <Image
+                                            alt={authorName}
+                                            className="object-cover"
+                                            src={authorAvatar || "/user.jpg"}
+                                            fill
+                                            sizes="44px"
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-sm font-semibold text-gray-900 group-hover/author:text-blue-600 transition">
+                                                {authorName}
+                                            </span>
+
+                                            <span
+                                                className="material-symbols-outlined text-[18px] text-blue-600"
+                                                title="Verified Author"
+                                            >
+                                                verified
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                            <span>Published on {publishedDate}</span>
+
+                                        </div>
+                                    </div>
+                                </Link>
                             ) : (
-                                <div className="h-11 w-11 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm ring-2 ring-white">
-                                    {authorName.charAt(0).toUpperCase()}
-                                </div>
+                                <>
+                                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full shadow-sm ring-2 ring-white">
+                                        <Image
+                                            alt={authorName}
+                                            className="object-cover"
+                                            src={authorAvatar || "/user.jpg"}
+                                            fill
+                                            sizes="44px"
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-sm font-semibold text-gray-900">
+                                                {authorName}
+                                            </span>
+
+                                            <span
+                                                className="material-symbols-outlined text-[18px] text-blue-600"
+                                                title="Verified Author"
+                                            >
+                                                verified
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                            <span>Published on {publishedDate}</span>
+
+                                            <span className="inline-block h-1 w-1 rounded-full bg-gray-400" />
+
+                                            <span className="flex items-center gap-0.5">
+                                                <span className="material-symbols-outlined text-[14px]">
+                                                    schedule
+                                                </span>
+                                                {readingTime}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </>
                             )}
-
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-sm font-semibold text-gray-900">
-                                        {authorName}
-                                    </span>
-
-                                    <span
-                                        className="material-symbols-outlined text-[18px] text-blue-600"
-                                        title="Verified Author"
-                                    >
-                                        verified
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span>Published on {publishedDate}</span>
-
-                                    <span className="inline-block h-1 w-1 rounded-full bg-gray-400" />
-
-                                    <span className="flex items-center gap-0.5">
-                                        <span className="material-symbols-outlined text-[14px]">
-                                            schedule
-                                        </span>
-                                        {readingTime}
-                                    </span>
-                                </div>
-                            </div>
                         </div>
 
-                        {/* Share Actions */}
-                        <div className="flex items-center gap-2">
-                            {/* X / Twitter */}
-                            <button
-                                aria-label="Share on X"
-                                className="flex items-center justify-center rounded-lg bg-white p-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900"
-                                title="Share on Twitter / X"
-                                type="button"
-                            >
-                                <svg
-                                    className="h-4 w-4 fill-current"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                                </svg>
-                            </button>
 
-                            {/* LinkedIn */}
-                            <button
-                                aria-label="Share on LinkedIn"
-                                className="flex items-center justify-center rounded-lg bg-white p-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900"
-                                title="Share on LinkedIn"
-                                type="button"
-                            >
-                                <svg
-                                    className="h-4 w-4 fill-current"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.45c-.89 0-1.6.72-1.6 1.6 0 .89.72 1.6 1.6 1.6.89 0 1.6-.71 1.6-1.6 0-.88-.71-1.6-1.6-1.6Z" />
-                                </svg>
-                            </button>
-
-                            {/* Copy Link */}
-                            <button
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
-                                id="copyLinkBtn"
-                                type="button"
-                            >
-                                <span className="material-symbols-outlined text-[16px]">
-                                    link
-                                </span>
-
-                                <span id="copyLinkText">Copy Link</span>
-                            </button>
-                        </div>
                     </div>
                 </header>
                 <Image src={blog?.featuredImage?.url || "https://images.pexels.com/photos/28216688/pexels-photo-28216688.png?_gl=1*1ddrzpr*_ga*MTg0Mjc0ODg1My4xNzkwODc0Nzcw*_ga_8JE65Q40S6*czE3OTA4NzQ3NjkkbzEkZzEkdDE3OTA4NzQ3OTUkajM0JGwwJGgw"} alt={blog?.title} width={0}
@@ -439,64 +511,31 @@ const Page = async ({ params }) => {
                         {
                             blog?.tags?.map((tag, index) => {
                                 const tagName = typeof tag === "object" ? tag.name : tag;
+                                const tagSlug = typeof tag === "object" ? tag.slug || tag.name : tag;
                                 return (
-                                    <div
+                                    <Link
                                         key={index}
-                                        className="rounded-lg bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm transition-colors hover:bg-gray-100 hover:text-blue-600 cursor-default"
+                                        href={`/blog?tag=${encodeURIComponent(tagSlug)}`}
+                                        className="rounded-lg bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm transition-colors hover:bg-blue-50 hover:text-blue-600"
                                     >
                                         #{tagName}
-                                    </div>
+                                    </Link>
                                 );
                             })
                         }
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                        {/* Like */}
-                        <button
-                            className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
-                            id="likeBtn"
-                            type="button"
-                        >
-                            <span
-                                className="material-symbols-outlined text-[18px]"
-                                id="likeIcon"
-                            >
-                                favorite_border
-                            </span>
-
-                            <span id="likeCount">142</span>
-                        </button>
-
-                        {/* Bookmark */}
-                        <button
-                            className="rounded-lg bg-white p-2 text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
-                            id="bookmarkBtn"
-                            title="Bookmark article"
-                            type="button"
-                        >
-                            <span
-                                className="material-symbols-outlined text-[18px]"
-                                id="bookmarkIcon"
-                            >
-                                bookmark_border
-                            </span>
-                        </button>
-                    </div>
                 </div>
                 <section className="mt-10 flex flex-col items-center gap-4 rounded-xl bg-white p-6 text-center shadow-sm sm:flex-row sm:items-start sm:text-left">
-                    {authorAvatar ? (
-                        <img
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full shadow-sm ring-4 ring-gray-100">
+                        <Image
                             alt={authorName}
-                            className="h-20 w-20 shrink-0 rounded-full object-cover shadow-sm ring-4 ring-gray-100"
-                            src={authorAvatar}
+                            className="object-cover"
+                            src={authorAvatar || "/user.jpg"}
+                            fill
+                            sizes="80px"
                         />
-                    ) : (
-                        <div className="h-20 w-20 shrink-0 rounded-full bg-blue-600 text-white font-bold text-2xl flex items-center justify-center shadow-sm ring-4 ring-gray-100">
-                            {authorName.charAt(0).toUpperCase()}
-                        </div>
-                    )}
+                    </div>
 
                     <div className="flex flex-1 flex-col items-center gap-2 sm:items-start">
                         <div className="flex w-full flex-col justify-between gap-2 sm:flex-row sm:items-center">
@@ -506,20 +545,28 @@ const Page = async ({ params }) => {
                                 </span>
 
                                 <h3 className="text-xl font-bold text-gray-900">
-                                    {authorName}
+                                    {authorUid ? (
+                                        <Link href={`/author/${authorUid}`} className="hover:text-blue-600 transition">
+                                            {authorName}
+                                        </Link>
+                                    ) : (
+                                        authorName
+                                    )}
                                 </h3>
                             </div>
 
-                            <a
-                                className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-200"
-                                href="#"
-                            >
-                                <span>View Profile</span>
+                            {authorUid && (
+                                <Link
+                                    className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-200"
+                                    href={`/author/${authorUid}`}
+                                >
+                                    <span>View Profile</span>
 
-                                <span className="material-symbols-outlined text-[16px]">
-                                    arrow_forward
-                                </span>
-                            </a>
+                                    <span className="material-symbols-outlined text-[16px]">
+                                        arrow_forward
+                                    </span>
+                                </Link>
+                            )}
                         </div>
 
                         <p className="text-base text-gray-500">

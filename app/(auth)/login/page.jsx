@@ -2,11 +2,21 @@
 import { login } from "@/app/lib/api/auth";
 import ShowToast from "@/app/lib/toast";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "@/app/context/AuthProvider";
+
 const Page = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { user } = useAuth();
+
+    useEffect(() => {
+        if (user) {
+            router.replace("/dashboard/profile");
+        }
+    }, [user, router]);
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -20,14 +30,11 @@ const Page = () => {
             ShowToast({ message: response.error, type: "error" });
         } else {
             ShowToast({ message: response.message, type: "success" });
-            success();
+            router.push("/dashboard/profile");
+            router.refresh();
         }
     };
-    const success = () => {
-        document.getElementById("email").value = "";
-        document.getElementById("password").value = "";
-        router.push("/dashboard/profile");
-    };
+
     return (
         <main className="min-h-screen bg-gray-50 px-4 py-16">
             <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center justify-center">
@@ -77,12 +84,6 @@ const Page = () => {
                                 >
                                     Password
                                 </label>
-                                <a
-                                    href="/forgot-password"
-                                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                                >
-                                    Forgot password?
-                                </a>
                             </div>
                             <input
                                 id="password"
@@ -110,22 +111,6 @@ const Page = () => {
                             )}
                         </button>
                     </form>
-                    {/* Divider */}
-                    <div className="my-6 flex items-center gap-3">
-                        <div className="h-px flex-1 bg-gray-200" />
-                        <span className="text-xs text-gray-400">OR</span>
-                        <div className="h-px flex-1 bg-gray-200" />
-                    </div>
-                    {/* Google Login */}
-                    <button
-                        type="button"
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">
-                            login
-                        </span>
-                        Continue with Google
-                    </button>
                     {/* Signup Link */}
                     <p className="mt-6 text-center text-sm text-gray-500">
                         Don&apos;t have an account?{" "}

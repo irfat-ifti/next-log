@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 const Footer = () => {
     return (
@@ -12,55 +13,47 @@ const Footer = () => {
                         </span>
                     </div>
 
-                    <p className="text-sm text-gray-500">
-                        A minimalist developer community built for learning Next.js
-                        fundamentals.
+                    <p className="text-sm leading-relaxed text-gray-500">
+                        An open-access editorial platform designed for engineers, architects, and technical leaders documenting the modern web.
                     </p>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex flex-wrap items-center gap-x-8 gap-y-2">
-                    <a
-                        href="#"
+                <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <Link
+                        href="/"
                         className="text-sm text-gray-500 transition-colors hover:text-gray-900"
                     >
                         Home
-                    </a>
+                    </Link>
 
-                    <a
-                        href="#"
+                    <Link
+                        href="/blog"
                         className="text-sm text-gray-500 transition-colors hover:text-gray-900"
                     >
-                        Blog
-                    </a>
+                        Articles
+                    </Link>
 
-                    <a
-                        href="#"
+                    <Link
+                        href="/categories"
                         className="text-sm text-gray-500 transition-colors hover:text-gray-900"
                     >
-                        Authors
-                    </a>
+                        Categories
+                    </Link>
 
-                    <a
-                        href="#"
+                    <Link
+                        href="/tags"
                         className="text-sm text-gray-500 transition-colors hover:text-gray-900"
                     >
-                        Privacy
-                    </a>
+                        Tags
+                    </Link>
 
-                    <a
-                        href="#"
+                    <Link
+                        href="/about"
                         className="text-sm text-gray-500 transition-colors hover:text-gray-900"
                     >
-                        RSS Feed
-                    </a>
-
-                    <a
-                        href="#"
-                        className="text-sm text-gray-500 transition-colors hover:text-gray-900"
-                    >
-                        Sitemap.xml
-                    </a>
+                        About
+                    </Link>
                 </nav>
             </div>
 
@@ -68,10 +61,10 @@ const Footer = () => {
             <div className="border-t border-gray-200">
                 <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-gray-500 sm:flex-row">
                     <p>
-                        © 2025 NextLog. Open-source editorial publishing platform.
+                        © {new Date().getFullYear()} NextLog Editorial. Open-source publication for engineers.
                     </p>
 
-                    <p>Powered by Next.js App Router</p>
+                    <p>Crafted with Next.js App Router &amp; Firebase</p>
                 </div>
             </div>
         </footer>

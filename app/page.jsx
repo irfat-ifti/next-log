@@ -4,21 +4,45 @@ import { useEffect, useState } from "react";
 import CTA from "@/app/components/CTA";
 import BlogCard from "@/app/components/BlogCard";
 import { getPosts } from "@/app/lib/api/post";
+import { getPopularTags } from "@/app/lib/api/tag";
 import Link from "next/link";
+import LoadingSpinner from "@/app/components/LoadingSpinner";
+
+const HOME_POSTS_LIMIT = 4;
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
+  const [popularTags, setPopularTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchPosts() {
+    async function fetchData() {
       try {
-        const result = await getPosts();
-        if (result.status) {
-          setPosts(result.data);
+        setLoading(true);
+        // Call getPosts with exact limit desired for home page
+        const [postsResult, tagsResult] = await Promise.all([
+          getPosts({ pageSize: HOME_POSTS_LIMIT }),
+          getPopularTags(8),
+        ]);
+
+        if (postsResult.status) {
+          setPosts(postsResult.data);
         } else {
-          setError(result.errorMessage || "Failed to load posts");
+          setError(postsResult.errorMessage || "Failed to load posts");
+        }
+
+        if (tagsResult?.status && tagsResult.data.length > 0) {
+          setPopularTags(tagsResult.data);
+        } else {
+          // Fallback popular topics if no tags in database yet
+          setPopularTags([
+            { id: "1", name: "Technology", slug: "technology" },
+            { id: "2", name: "Programming", slug: "programming" },
+            { id: "3", name: "Web Development", slug: "web-development" },
+            { id: "4", name: "Design", slug: "design" },
+            { id: "5", name: "Career", slug: "career" },
+          ]);
         }
       } catch (err) {
         setError(err.message);
@@ -26,46 +50,45 @@ export default function Home() {
         setLoading(false);
       }
     }
-    fetchPosts();
+    fetchData();
   }, []);
 
   return (
     <>
       {/* Hero Section */}
-      <section className="mt-16.25 mx-auto flex max-w-3xl flex-col items-start py-16 text-left sm:items-center sm:text-center px-4">
-        {/* Badge */}
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-blue-600">
+      <section className="mt-16.25 mx-auto flex max-w-4xl flex-col items-start py-16 text-left sm:items-center sm:text-center px-4">
+        {/* Editorial Pill */}
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50/70 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-blue-700 shadow-xs">
           <span className="h-2 w-2 animate-pulse rounded-full bg-blue-600" />
-          <span>Next.js 15 &amp; RSC Community Edition</span>
+          <span>Engineering Thought Leadership &bull; Open Platform</span>
         </div>
 
         {/* Heading */}
-        <h1 className="mb-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-          Share your ideas. Discover something new.
+        <h1 className="mb-5 text-4xl font-extrabold tracking-tight text-gray-950 sm:text-5xl lg:text-6xl sm:leading-[1.15]">
+          Where Modern Developers Write, Think, and Build in Public.
         </h1>
 
-        {/* Description */}
-        <p className="mb-8 max-w-2xl text-base leading-7 text-gray-500 sm:text-lg">
-          A simple community where authors can publish articles and readers can
-          discover and discuss interesting ideas.
+        {/* Editorial Subtitle */}
+        <p className="mb-8 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg">
+          Deep-dives into architecture patterns, modern frameworks, and hard-earned engineering insights. Crafted by software engineers, read by passionate builders worldwide.
         </p>
 
-        {/* Buttons */}
-        <div className="flex flex-wrap items-center gap-4">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-3.5">
           <a
             href="#latest"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow"
           >
-            <span>Explore Posts</span>
+            <span>Explore Dispatches</span>
             <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
           </a>
 
           <Link
-            href="/dashboard/new"
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
+            href="/dashboard/create-post"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 shadow-xs transition hover:bg-gray-50 hover:border-gray-300"
           >
-            <span className="material-symbols-outlined text-[18px]">edit_note</span>
-            <span>Start Writing</span>
+            <span className="material-symbols-outlined text-[18px] text-blue-600">edit_note</span>
+            <span>Publish an Article</span>
           </Link>
         </div>
       </section>
@@ -77,23 +100,32 @@ export default function Home() {
             <span className="material-symbols-outlined text-[18px]">tag</span>
             <span>Popular Topics</span>
           </div>
-          <a className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline" href="#">
+          <Link className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline" href="/tags">
             <span>View all tags</span>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-          </a>
+          </Link>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {["Technology", "Programming", "Web Development", "Design", "Career"].map((tag) => (
-            <a
-              key={tag}
-              className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-blue-50 hover:text-blue-600"
-              href="#"
-            >
-              <span className="font-mono text-[12px] text-gray-400">#</span>
-              <span>{tag}</span>
-            </a>
-          ))}
+          {popularTags.map((tag) => {
+            const tagName = typeof tag === "object" ? tag.name : tag;
+            const tagSlug = typeof tag === "object" ? tag.slug || tag.name : tag;
+            return (
+              <Link
+                key={tag.id || tagSlug}
+                className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-blue-50 hover:text-blue-600"
+                href={`/blog?tag=${encodeURIComponent(tagSlug)}`}
+              >
+                <span className="font-mono text-[12px] text-gray-400">#</span>
+                <span>{tagName}</span>
+                {tag.posts > 0 && (
+                  <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                    {tag.posts}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -102,48 +134,20 @@ export default function Home() {
         {/* Section Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Latest Articles</h2>
-            <p className="text-sm text-gray-500">Fresh insights from developers writing on NextLog</p>
-          </div>
-
-          <div className="hidden items-center gap-1 rounded-lg bg-white p-1 text-sm text-gray-500 shadow-sm sm:flex">
-            <button className="rounded bg-gray-100 px-3 py-1 font-medium text-blue-600" id="sortRecentBtn">
-              Recent
-            </button>
-            <button className="rounded px-3 py-1 transition-colors hover:text-gray-900" id="sortPopularBtn">
-              Trending
-            </button>
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Latest Editorial Dispatches</h2>
+            <p className="mt-1 text-sm text-gray-500">Curated, peer-reviewed knowledge written by engineers across the community.</p>
           </div>
         </div>
 
         {/* Posts Grid */}
         {loading ? (
-          /* Loading Skeletons */
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse rounded-xl bg-white shadow-sm flex flex-col overflow-hidden">
-                {/* Image placeholder */}
-                <div className="h-48 w-full flex-shrink-0 bg-gray-200" />
-                {/* Content placeholder */}
-                <div className="p-5 flex flex-col gap-3 flex-1">
-                  <div className="h-4 bg-gray-200 rounded-full w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded-full w-full" />
-                  <div className="h-3 bg-gray-200 rounded-full w-5/6" />
-                  <div className="mt-auto pt-3 flex items-center gap-3">
-                    <div className="h-7 w-7 rounded-full bg-gray-200 flex-shrink-0" />
-                    <div className="h-3 bg-gray-200 rounded-full w-24" />
-                    <div className="ml-auto h-3 bg-gray-200 rounded-full w-16" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <LoadingSpinner size={44} label="Loading latest articles..." />
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <span className="material-symbols-outlined text-[48px] text-red-300">error</span>
             <p className="mt-3 text-base font-medium text-red-500">{error}</p>
             <button
-              onClick={() => { setLoading(true); setError(null); getPosts().then(r => { setPosts(r.data || []); setLoading(false); }).catch(e => { setError(e.message); setLoading(false); }); }}
+              onClick={() => { setLoading(true); setError(null); getPosts({ pageSize: HOME_POSTS_LIMIT }).then(r => { setPosts(r.data || []); setLoading(false); }).catch(e => { setError(e.message); setLoading(false); }); }}
               className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               Retry
@@ -152,14 +156,14 @@ export default function Home() {
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <span className="material-symbols-outlined text-[48px] text-gray-300">article</span>
-            <p className="mt-3 text-base font-medium text-gray-500">No articles yet.</p>
-            <p className="text-sm text-gray-400">Be the first to write something!</p>
+            <p className="mt-3 text-base font-medium text-gray-700">No published dispatches yet.</p>
+            <p className="text-sm text-gray-400">Be the first to share an in-depth breakdown or tutorial!</p>
             <Link
-              href="/dashboard/new"
+              href="/dashboard/create-post"
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               <span className="material-symbols-outlined text-[16px]">edit_note</span>
-              Write a Post
+              Publish First Post
             </Link>
           </div>
         ) : (

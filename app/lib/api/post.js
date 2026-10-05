@@ -11,10 +11,61 @@ import {
     orderBy,
     serverTimestamp,
     where,
+    limit,
+    startAfter,
+    increment,
 } from "firebase/firestore";
 import { uploadImageToImgBB } from "@/app/services/imgbb";
 
 const COLLECTION_NAME = "posts";
+
+async function adjustCategoryPostCount(categoryIdentifier, delta) {
+    if (!categoryIdentifier) return;
+    try {
+        const catRef = collection(db, "categories");
+        let catDocRef = null;
+        if (categoryIdentifier.length > 15) {
+            catDocRef = doc(db, "categories", categoryIdentifier);
+        } else {
+            const cleanSlug = categoryIdentifier.toLowerCase().trim().replace(/\s+/g, "-");
+            const q = query(catRef, where("slug", "==", cleanSlug), limit(1));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                catDocRef = snap.docs[0].ref;
+            } else {
+                const qName = query(catRef, where("name", "==", categoryIdentifier), limit(1));
+                const snapName = await getDocs(qName);
+                if (!snapName.empty) catDocRef = snapName.docs[0].ref;
+            }
+        }
+        if (catDocRef) {
+            await updateDoc(catDocRef, { posts: increment(delta) });
+        }
+    } catch (e) {
+        console.warn("Could not adjust category post count:", e?.message);
+    }
+}
+
+async function adjustTagsPostCount(tags, delta) {
+    if (!Array.isArray(tags)) return;
+    for (const tag of tags) {
+        try {
+            const tagId = typeof tag === "object" ? tag.id : null;
+            const tagSlug = (typeof tag === "object" ? tag.slug || tag.name : tag || "").toLowerCase().trim();
+            if (tagId) {
+                await updateDoc(doc(db, "tags", tagId), { posts: increment(delta) });
+            } else if (tagSlug) {
+                const q = query(collection(db, "tags"), where("slug", "==", tagSlug), limit(1));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    await updateDoc(snap.docs[0].ref, { posts: increment(delta) });
+                }
+            }
+        } catch (e) {
+            console.warn("Could not adjust tag post count:", e?.message);
+        }
+    }
+}
 
 /**
  * Creates a new post in Firestore and uploads featured image to Firebase Storage if a File is provided.
@@ -78,6 +129,7 @@ export async function createPost(post) {
             content: post.content ?? null,
             contentHtml: post.contentHtml || "",
             category: post.category || "",
+            categorySlug: (post.category || "").toLowerCase().trim().replace(/\s+/g, "-"),
             tags: formattedTags,
             featuredImage: featuredImageData,
             isFeatured: Boolean(post.isFeatured),
@@ -98,6 +150,11 @@ export async function createPost(post) {
         const docRef = await addDoc(collectionRef, newPost);
 
         if (docRef?.id) {
+            if (newPost.status === "published") {
+                adjustCategoryPostCount(newPost.category, 1);
+                adjustTagsPostCount(newPost.tags, 1);
+            }
+
             return {
                 status: true,
                 post_id: docRef.id,
@@ -141,30 +198,119 @@ export async function createPost(post) {
 //         return { status: false, errorMessage: error.message, data: [] };
 //     }
 // }
-export async function getPosts() {
+export async function getPosts(options = {}) {
     try {
+        const opts = typeof options === "number" ? { pageSize: options } : (options || {});
+        const {
+            pageSize = null,
+            lastDoc = null,
+            category = null,
+            tag = null,
+            status = "published",
+            orderByField = "createdAtTimestamp",
+            orderDirection = "desc",
+        } = opts;
+
         const collectionRef = collection(db, COLLECTION_NAME);
+        const constraints = [];
 
-        const q = query(
-            collectionRef,
-            where("status", "==", "published"),
-            orderBy("createdAtTimestamp", "desc")
-        );
+        if (status) {
+            constraints.push(where("status", "==", status));
+        }
 
-        const querySnapshot = await getDocs(q);
+        // Apply category filter with casing/slug variants
+        if (category && category !== "all") {
+            const clean = category.trim();
+            const lower = clean.toLowerCase();
+            const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
+            const slug = lower.replace(/\s+/g, "-");
+            const candidates = Array.from(new Set([clean, lower, cap, slug]));
+            if (candidates.length === 1) {
+                constraints.push(where("category", "==", candidates[0]));
+            } else {
+                constraints.push(where("category", "in", candidates.slice(0, 10)));
+            }
+        }
 
-        const posts = [];
+        if (orderByField) {
+            constraints.push(orderBy(orderByField, orderDirection));
+        }
 
-        querySnapshot.forEach((docSnap) => {
-            posts.push({
-                id: docSnap.id,
-                ...docSnap.data(),
+        if (lastDoc) {
+            constraints.push(startAfter(lastDoc));
+        }
+
+        // Fetch pageSize + 1 to reliably detect if there is a next page
+        const limitCount = pageSize && typeof pageSize === "number" && pageSize > 0 ? pageSize + 1 : null;
+        if (limitCount) {
+            constraints.push(limit(limitCount));
+        }
+
+        let querySnapshot;
+        try {
+            const q = query(collectionRef, ...constraints);
+            querySnapshot = await getDocs(q);
+        } catch (queryErr) {
+            console.warn("Primary getPosts query failed (missing index or constraint mismatch). Falling back:", queryErr?.message);
+            // Fallback query without compound where conditions to avoid crashing on missing indexes
+            const fallbackConstraints = [];
+            if (status) fallbackConstraints.push(where("status", "==", status));
+            if (orderByField) fallbackConstraints.push(orderBy(orderByField, orderDirection));
+            if (lastDoc) fallbackConstraints.push(startAfter(lastDoc));
+            if (limitCount) fallbackConstraints.push(limit(limitCount));
+            const qFallback = query(collectionRef, ...fallbackConstraints);
+            querySnapshot = await getDocs(qFallback);
+        }
+
+        const rawDocs = querySnapshot.docs;
+        const hasMore = limitCount ? rawDocs.length > pageSize : false;
+        const resultDocs = hasMore ? rawDocs.slice(0, pageSize) : rawDocs;
+
+        let posts = resultDocs.map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+        }));
+
+        // Filter category by slug or name case-insensitively
+        if (category && category !== "all") {
+            const targetSlug = category.toLowerCase().trim().replace(/\s+/g, "-");
+            posts = posts.filter((p) => {
+                const catStr = String(p.category || "").toLowerCase().trim();
+                const catSlug = (p.categorySlug || catStr).replace(/\s+/g, "-");
+                return (
+                    catStr === targetSlug ||
+                    catSlug === targetSlug ||
+                    catStr === category.toLowerCase().trim()
+                );
             });
-        });
+        }
+
+        // Apply tag filter in-memory (handles array of tag objects or strings)
+        if (tag && tag.trim()) {
+            const tLower = tag.toLowerCase().trim().replace(/^#/, "");
+            posts = posts.filter((p) => {
+                if (!Array.isArray(p.tags)) return false;
+                return p.tags.some((t) => {
+                    const name = typeof t === "object" ? t.name : t;
+                    const slug = typeof t === "object" ? t.slug : "";
+                    const id = typeof t === "object" ? t.id : "";
+                    return (
+                        (name && String(name).toLowerCase() === tLower) ||
+                        (slug && String(slug).toLowerCase() === tLower) ||
+                        (id && String(id).toLowerCase() === tLower)
+                    );
+                });
+            });
+        }
+
+        const lastVisibleDoc = resultDocs.length > 0 ? resultDocs[resultDocs.length - 1] : null;
 
         return {
             status: true,
             data: posts,
+            lastDoc: lastVisibleDoc,
+            hasMore: Boolean(hasMore),
+            totalFetched: posts.length,
         };
     } catch (error) {
         console.error("getPosts error:", error);
@@ -173,6 +319,9 @@ export async function getPosts() {
             status: false,
             errorMessage: error.message,
             data: [],
+            lastDoc: null,
+            hasMore: false,
+            totalFetched: 0,
         };
     }
 }
@@ -348,7 +497,15 @@ export async function deletePost(id) {
         }
 
         const docRef = doc(db, COLLECTION_NAME, String(id));
+        const postSnap = await getDoc(docRef);
+        const postData = postSnap.exists() ? postSnap.data() : null;
+
         await deleteDoc(docRef);
+
+        if (postData && (postData.status === "published" || !postData.status)) {
+            adjustCategoryPostCount(postData.category, -1);
+            adjustTagsPostCount(postData.tags, -1);
+        }
 
         return {
             status: true,

@@ -8,33 +8,124 @@ import {
     doc,
     query,
     orderBy,
+    where,
+    limit,
+    startAfter,
 } from "firebase/firestore";
 
 const COLLECTION_NAME = "tags";
 
-export async function getTags() {
+export async function getTags(options = {}) {
     try {
+        const opts = typeof options === "number" ? { pageSize: options } : (options || {});
+        const {
+            pageSize = null,
+            lastDoc = null,
+            status = null,
+            search = null,
+            orderByField = "createdAtTimestamp",
+            orderDirection = "desc",
+        } = opts;
+
         const collectionRef = collection(db, COLLECTION_NAME);
-        let querySnapshot;
-        try {
-            const q = query(collectionRef, orderBy("createdAtTimestamp", "desc"));
-            querySnapshot = await getDocs(q);
-        } catch {
-            querySnapshot = await getDocs(collectionRef);
+        const constraints = [];
+
+        if (status) {
+            constraints.push(where("status", "==", status));
         }
 
-        const tags = [];
-        querySnapshot.forEach((docSnap) => {
-            tags.push({
-                id: docSnap.id,
-                ...docSnap.data(),
-            });
-        });
+        if (orderByField) {
+            constraints.push(orderBy(orderByField, orderDirection));
+        }
 
-        return { status: true, data: tags };
+        if (lastDoc) {
+            constraints.push(startAfter(lastDoc));
+        }
+
+        const limitCount = pageSize && typeof pageSize === "number" && pageSize > 0 ? pageSize + 1 : null;
+        if (limitCount) {
+            constraints.push(limit(limitCount));
+        }
+
+        let querySnapshot;
+        try {
+            const q = query(collectionRef, ...constraints);
+            querySnapshot = await getDocs(q);
+        } catch {
+            const fallbackConstraints = [];
+            if (status) fallbackConstraints.push(where("status", "==", status));
+            if (limitCount) fallbackConstraints.push(limit(limitCount));
+            const q = fallbackConstraints.length > 0 ? query(collectionRef, ...fallbackConstraints) : query(collectionRef);
+            querySnapshot = await getDocs(q);
+        }
+
+        const rawDocs = querySnapshot.docs;
+        const hasMore = limitCount ? rawDocs.length > pageSize : false;
+        const resultDocs = hasMore ? rawDocs.slice(0, pageSize) : rawDocs;
+
+        let tags = resultDocs.map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+            posts: Number(docSnap.data()?.posts) || 0,
+        })).filter((t) => t.name && t.name.trim().length > 0);
+
+        if (search && search.trim()) {
+            const s = search.toLowerCase().trim();
+            tags = tags.filter(
+                (t) =>
+                    (t.name && t.name.toLowerCase().includes(s)) ||
+                    (t.slug && t.slug.toLowerCase().includes(s)) ||
+                    (t.description && t.description.toLowerCase().includes(s))
+            );
+        }
+
+        const lastVisibleDoc = resultDocs.length > 0 ? resultDocs[resultDocs.length - 1] : null;
+
+        return {
+            status: true,
+            data: tags,
+            lastDoc: lastVisibleDoc,
+            hasMore: Boolean(hasMore),
+        };
     } catch (error) {
         console.error("getTags error:", error);
-        return { status: false, errorMessage: error.message, data: [] };
+        return { status: false, errorMessage: error.message, data: [], lastDoc: null, hasMore: false };
+    }
+}
+
+export async function getPopularTags(limitCount = 10) {
+    try {
+        const res = await getTags({
+            pageSize: limitCount,
+            status: "Active",
+            orderByField: "posts",
+            orderDirection: "desc",
+        });
+        if (res.status && res.data.length > 0) {
+            return res;
+        }
+        return await getTags({ pageSize: limitCount, status: "Active" });
+    } catch {
+        return await getTags({ pageSize: limitCount });
+    }
+}
+
+export async function getTagBySlug(slug) {
+    try {
+        if (!slug) return { status: false, errorMessage: "Tag slug is required" };
+        const collectionRef = collection(db, COLLECTION_NAME);
+        const q = query(collectionRef, where("slug", "==", slug), limit(1));
+        const snap = await getDocs(q);
+        if (snap.empty) {
+            return { status: false, errorMessage: "Tag not found" };
+        }
+        const docSnap = snap.docs[0];
+        return {
+            status: true,
+            data: { id: docSnap.id, ...docSnap.data() },
+        };
+    } catch (err) {
+        return { status: false, errorMessage: err.message };
     }
 }
 

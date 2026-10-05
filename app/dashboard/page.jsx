@@ -135,13 +135,6 @@ export default function DashboardOverviewPage() {
                         <span className="text-2xl font-bold tracking-tight text-gray-900 capitalize">
                             {profile?.role || "Author"}
                         </span>
-                        <Link
-                            href="/dashboard/profile"
-                            className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
-                        >
-                            View profile details
-                            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                        </Link>
                     </div>
                 </div>
             </div>

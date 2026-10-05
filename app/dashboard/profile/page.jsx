@@ -1,48 +1,107 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useAuth } from "@/app/context/AuthProvider";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/services/firebase";
 import { useRouter } from "next/navigation";
 import ShowToast from "@/app/lib/toast";
 import ConfirmationModal from "@/app/components/ConfirmationModal";
+import { updateUserProfile } from "@/app/lib/api/auth";
 
 export default function ProfilePage() {
-    const { user, profile } = useAuth();
+    const { user, profile, refreshProfile } = useAuth();
     const router = useRouter();
+    const fileInputRef = useRef(null);
 
     const [isSaving, setIsSaving] = useState(false);
     const [showSignOutModal, setShowSignOutModal] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
 
     // Form state initialized from auth profile
     const [formData, setFormData] = useState({
-        name: profile?.name || user?.displayName || "NextLog Author",
-        username: profile?.username || user?.email?.split("@")[0] || "author",
-        email: user?.email || "author@example.com",
-        bio: profile?.bio || "Passionate software engineer and tech writer sharing knowledge on Next.js, React, and modern web development.",
-        role: profile?.role || "author",
-        x: profile?.socialLinks?.x || "https://x.com/nextlog",
-        linkedin: profile?.socialLinks?.linkedin || "https://linkedin.com/in/nextlog",
+        name: "",
+        email: "",
+        bio: "",
+        role: "author",
+        x: "",
+        linkedin: "",
     });
+
+    useEffect(() => {
+        if (profile || user) {
+            setFormData({
+                name: profile?.name || user?.displayName || "",
+                email: user?.email || "",
+                bio: profile?.bio || "",
+                role: profile?.role || "author",
+                x: profile?.socialLinks?.x || "",
+                linkedin: profile?.socialLinks?.linkedin || "",
+            });
+            if (profile?.avatar || user?.photoURL) {
+                setAvatarPreview(profile?.avatar || user?.photoURL);
+            }
+        }
+    }, [profile, user]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSave = (e) => {
-        e.preventDefault();
-        setIsSaving(true);
+    const handleAvatarChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setAvatarFile(file);
+            const previewUrl = URL.createObjectURL(file);
+            setAvatarPreview(previewUrl);
+        }
+    };
 
-        setTimeout(() => {
-            setIsSaving(false);
-            ShowToast({
-                message: "Profile updated successfully!",
-                type: "success",
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (!user) {
+            ShowToast({ message: "You must be signed in to save profile", type: "error" });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const res = await updateUserProfile(user.uid, {
+                name: formData.name,
+                bio: formData.bio,
+                avatar: profile?.avatar || null,
+                avatarFile: avatarFile,
+                x: formData.x,
+                linkedin: formData.linkedin,
             });
-        }, 600);
+
+            if (res.status) {
+                if (refreshProfile) {
+                    await refreshProfile();
+                }
+                setAvatarFile(null);
+                ShowToast({
+                    message: "Profile updated successfully!",
+                    type: "success",
+                });
+            } else {
+                ShowToast({
+                    message: res.error || "Failed to update profile",
+                    type: "error",
+                });
+            }
+        } catch (err) {
+            ShowToast({
+                message: err.message || "Failed to update profile",
+                type: "error",
+            });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSignOut = async () => {
@@ -59,14 +118,8 @@ export default function ProfilePage() {
         }
     };
 
-    const avatarSrc = profile?.avatar || user?.photoURL || null;
-    const displayName = formData.name;
-    const initials = displayName
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
+    const avatarSrc = avatarPreview || profile?.avatar || user?.photoURL || "/user.jpg";
+    const displayName = formData.name || "NextLog Author";
 
     const joinedDate = profile?.createdAt
         ? new Date(profile.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
@@ -89,19 +142,30 @@ export default function ProfilePage() {
                 <div className="relative px-6 pb-6 pt-0 sm:px-8">
                     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-14 sm:-mt-16 gap-4">
                         <div className="flex items-end gap-4">
-                            <div className="relative">
-                                {avatarSrc ? (
-                                    <img
-                                        src={avatarSrc}
-                                        alt={displayName}
-                                        className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl object-cover ring-4 ring-white shadow-md bg-white"
-                                    />
-                                ) : (
-                                    <div className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-2xl bg-blue-600 text-2xl sm:text-3xl font-bold text-white ring-4 ring-white shadow-md">
-                                        {initials}
-                                    </div>
-                                )}
-                                <span className="absolute bottom-1 right-1 flex h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white" />
+                            <div className="relative group h-24 w-24 sm:h-28 sm:w-28 shrink-0 overflow-hidden rounded-2xl ring-4 ring-white shadow-md bg-white">
+                                <Image
+                                    src={avatarSrc}
+                                    alt={displayName}
+                                    fill
+                                    sizes="(max-width: 640px) 96px, 112px"
+                                    className="object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    title="Upload new avatar"
+                                    className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                >
+                                    <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+                                </button>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleAvatarChange}
+                                    className="hidden"
+                                />
+                                <span className="absolute bottom-1 right-1 z-20 flex h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white" />
                             </div>
 
                             <div className="mb-2">
@@ -113,7 +177,14 @@ export default function ProfilePage() {
                                         {formData.role}
                                     </span>
                                 </div>
-                                <p className="text-sm text-gray-500">@{formData.username}</p>
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="mt-1 text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 cursor-pointer"
+                                >
+                                    <span className="material-symbols-outlined text-[14px]">edit</span>
+                                    <span>Change profile photo</span>
+                                </button>
                             </div>
                         </div>
 
@@ -144,7 +215,7 @@ export default function ProfilePage() {
 
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         {/* Name */}
-                        <div>
+                        <div className="sm:col-span-2">
                             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                                 Full Name
                             </label>
@@ -158,23 +229,6 @@ export default function ProfilePage() {
                             />
                         </div>
 
-                        {/* Username */}
-                        <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
-                                Username
-                            </label>
-                            <div className="relative">
-                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">@</span>
-                                <input
-                                    type="text"
-                                    name="username"
-                                    value={formData.username}
-                                    onChange={handleChange}
-                                    placeholder="username"
-                                    className="w-full rounded-xl border border-gray-200 pl-8 pr-3.5 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition"
-                                />
-                            </div>
-                        </div>
 
                         {/* Email */}
                         <div>

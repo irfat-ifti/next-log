@@ -66,12 +66,29 @@ export function AuthProvider({ children }) {
         return () => unsubscribe();
     }, []);
 
+    const refreshProfile = async () => {
+        if (!auth.currentUser) return null;
+        try {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                setProfile(data);
+                return data;
+            }
+        } catch (error) {
+            console.error("Failed to refresh profile:", error);
+        }
+        return null;
+    };
+
     return (
         <AuthContext.Provider
             value={{
                 user,
                 profile,
                 loading,
+                refreshProfile,
             }}
         >
             {children}
