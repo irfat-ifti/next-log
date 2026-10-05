@@ -72,7 +72,6 @@ function TagSelector({ tagList = [], selectedTags = [], setSelectedTags }) {
                 Tags
             </label>
 
-            {/* Input container */}
             <div
                 className={`flex flex-wrap items-center gap-1.5 border rounded-lg px-2.5 py-1.5 bg-white min-h-10 transition
                     ${
@@ -85,7 +84,7 @@ function TagSelector({ tagList = [], selectedTags = [], setSelectedTags }) {
                     setIsOpen(true);
                 }}
             >
-                {/* Selected tags */}
+
                 {selectedTags.map((tag) => (
                     <span
                         key={tag.id}
@@ -106,7 +105,6 @@ function TagSelector({ tagList = [], selectedTags = [], setSelectedTags }) {
                     </span>
                 ))}
 
-                {/* Search input */}
                 <input
                     type="text"
                     value={inputValue}
@@ -124,7 +122,6 @@ function TagSelector({ tagList = [], selectedTags = [], setSelectedTags }) {
                     className="flex-1 min-w-24 outline-none border-none text-sm text-slate-700 placeholder:text-slate-400 bg-transparent py-0.5"
                 />
 
-                {/* Arrow */}
                 <svg
                     className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${
                         isOpen ? "rotate-180" : ""
@@ -142,7 +139,6 @@ function TagSelector({ tagList = [], selectedTags = [], setSelectedTags }) {
                 </svg>
             </div>
 
-            {/* Suggestions */}
             {isOpen && inputValue.trim() && (
                 <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                     {suggestions.length > 0 ? (

@@ -12,7 +12,6 @@ import {
 } from "firebase/firestore";
 import { serverTimestamp } from "firebase/firestore";
 
-
 const COLLECTION_NAME = "comments"
 
 export async function addComment(comment) {

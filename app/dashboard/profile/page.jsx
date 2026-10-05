@@ -21,7 +21,6 @@ export default function ProfilePage() {
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(null);
 
-    // Form state initialized from auth profile
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -127,9 +126,9 @@ export default function ProfilePage() {
 
     return (
         <div className="mx-auto max-w-4xl space-y-8">
-            {/* Header & Cover Banner */}
+
             <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs">
-                {/* Banner Gradient */}
+
                 <div className="h-32 sm:h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 relative">
                     <div className="absolute right-4 top-4 flex items-center gap-2">
                         <span className="rounded-full bg-black/20 px-3 py-1 text-xs font-medium text-white backdrop-blur">
@@ -138,7 +137,6 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                {/* Profile Card Info */}
                 <div className="relative px-6 pb-6 pt-0 sm:px-8">
                     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-14 sm:-mt-16 gap-4">
                         <div className="flex items-end gap-4">
@@ -202,9 +200,8 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {/* Profile Form Details */}
             <form onSubmit={handleSave} className="space-y-6">
-                {/* Personal Information */}
+
                 <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs sm:p-8 space-y-6">
                     <div>
                         <h2 className="text-lg font-bold text-gray-900">Personal Information</h2>
@@ -214,7 +211,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        {/* Name */}
+
                         <div className="sm:col-span-2">
                             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                                 Full Name
@@ -229,8 +226,6 @@ export default function ProfilePage() {
                             />
                         </div>
 
-
-                        {/* Email */}
                         <div>
                             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                                 Email Address
@@ -251,7 +246,6 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        {/* Role */}
                         <div>
                             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                                 Account Role
@@ -266,7 +260,6 @@ export default function ProfilePage() {
                             />
                         </div>
 
-                        {/* Bio */}
                         <div className="sm:col-span-2">
                             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                                 Author Bio
@@ -286,7 +279,6 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                {/* Social Profiles */}
                 <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs sm:p-8 space-y-6">
                     <div>
                         <h2 className="text-lg font-bold text-gray-900">Social Connections</h2>
@@ -296,7 +288,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        {/* X / Twitter */}
+
                         <div>
                             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                                 X (Twitter) URL
@@ -316,7 +308,6 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        {/* LinkedIn */}
                         <div>
                             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                                 LinkedIn URL
@@ -338,7 +329,6 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                {/* Save Button */}
                 <div className="flex items-center justify-end gap-3 pt-2">
                     <button
                         type="submit"
@@ -360,7 +350,6 @@ export default function ProfilePage() {
                 </div>
             </form>
 
-            {/* Sign Out Confirmation Modal */}
             <ConfirmationModal
                 isOpen={showSignOutModal}
                 onClose={() => !isSigningOut && setShowSignOutModal(false)}

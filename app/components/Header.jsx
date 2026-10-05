@@ -89,7 +89,7 @@ const Header = () => {
     return (
         <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-200 bg-white">
             <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:gap-6">
-                {/* Left: Logo + Nav */}
+
                 <div className="flex items-center gap-4 lg:gap-8 shrink-0 min-w-0">
                     <Link href="/" className="flex items-center gap-2 shrink-0 w-[100px] sm:w-auto">
                         <Image
@@ -124,9 +124,8 @@ const Header = () => {
                     </nav>
                 </div>
 
-                {/* Right Side */}
                 <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
-                    {/* Desktop Search Form */}
+
                     <form onSubmit={handleSearchSubmit} className="relative hidden w-36 md:block lg:w-56 xl:w-64">
                         <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-gray-400">
                             search
@@ -150,7 +149,6 @@ const Header = () => {
                         </span>
                     </button>
 
-                    {/* Auth Section */}
                     {loading ? (
                         <div className="flex h-8 w-8 items-center justify-center">
                             <span className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
@@ -166,7 +164,6 @@ const Header = () => {
                                 <span>Write Post</span>
                             </Link>
 
-                            {/* Avatar + Dropdown */}
                             <div className="relative" ref={dropdownRef}>
                                 <button
                                     id="user-menu-button"
@@ -191,7 +188,6 @@ const Header = () => {
                                     </span>
                                 </button>
 
-                                {/* Dropdown Panel with Framer Motion */}
                                 <AnimatePresence>
                                     {dropdownOpen && (
                                         <motion.div
@@ -204,7 +200,7 @@ const Header = () => {
                                             role="menu"
                                             aria-labelledby="user-menu-button"
                                         >
-                                            {/* User Info */}
+
                                             <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
                                                 <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full">
                                                     <Image
@@ -226,7 +222,6 @@ const Header = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Menu Items */}
                                             <div className="py-1" role="none">
                                                 <Link
                                                     href="/dashboard"
@@ -265,7 +260,6 @@ const Header = () => {
                                                 </Link>
                                             </div>
 
-                                            {/* Logout */}
                                             <div className="border-t border-gray-100 py-1" role="none">
                                                 <button
                                                     onClick={() => {
@@ -304,7 +298,6 @@ const Header = () => {
                         </div>
                     )}
 
-                    {/* Mobile/Tablet Hamburger Button */}
                     <button
                         type="button"
                         onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -318,7 +311,6 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* Mobile/Tablet Search Bar Dropdown */}
             <AnimatePresence>
                 {mobileSearchOpen && (
                     <motion.div
@@ -350,7 +342,6 @@ const Header = () => {
                 )}
             </AnimatePresence>
 
-            {/* Mobile/Tablet Navigation Drawer */}
             <AnimatePresence>
                 {mobileMenuOpen && (
                     <motion.nav
@@ -409,7 +400,6 @@ const Header = () => {
                 )}
             </AnimatePresence>
 
-            {/* Sign Out Confirmation Modal */}
             <ConfirmationModal
                 isOpen={showSignOutModal}
                 onClose={() => !signingOut && setShowSignOutModal(false)}

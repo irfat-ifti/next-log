@@ -9,9 +9,13 @@ import ShowToast from "@/app/lib/toast";
 import ConfirmationModal from "@/app/components/ConfirmationModal";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 
+const INITIAL_POSTS_COUNT = 24;
+const POSTS_BATCH_SIZE = 24;
+
 const Page = () => {
     const { user } = useAuth();
     const [posts, setPosts] = useState([]);
+    const [visibleCount, setVisibleCount] = useState(INITIAL_POSTS_COUNT);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState(null);
     const [postToDelete, setPostToDelete] = useState(null);
@@ -28,7 +32,7 @@ const Page = () => {
                 const { data, status } = await getPostsByAuthorUid(user.uid);
 
                 if (isMounted && status) {
-                    setPosts(data);
+                    setPosts(data || []);
                 }
             } catch (error) {
                 console.error("Failed to fetch posts:", error);
@@ -43,6 +47,10 @@ const Page = () => {
             isMounted = false;
         };
     }, [user?.uid]);
+
+    const handleLoadMore = () => {
+        setVisibleCount((prev) => prev + POSTS_BATCH_SIZE);
+    };
 
     const handleConfirmDelete = async () => {
         if (!postToDelete) return;
@@ -77,7 +85,6 @@ const Page = () => {
         <div className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 w-full">
             <div className="mx-auto max-w-4xl">
 
-                {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">
@@ -93,7 +100,6 @@ const Page = () => {
                     </span>
                 </div>
 
-                {/* Loading */}
                 {loading ? (
                     <div className="rounded-xl border border-gray-100 bg-white p-12 shadow-sm">
                         <LoadingSpinner size={42} label="Loading your posts..." />
@@ -119,16 +125,14 @@ const Page = () => {
                         </Link>
                     </div>
                 ) : (
-                    /* Posts List */
                     <div className="space-y-4">
-                        {posts.map((post) => (
+                        {posts.slice(0, visibleCount).map((post) => (
                             <div
                                 key={post.id}
                                 className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6"
                             >
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 
-                                    {/* Post Info */}
                                     <div className="min-w-0 flex-1">
                                         <div className="mb-3 flex flex-wrap items-center gap-2">
                                             <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
@@ -164,11 +168,10 @@ const Page = () => {
                                         </div>
                                     </div>
 
-                                    {/* Actions */}
                                     <div className="flex shrink-0 items-center gap-2">
                                         <Link
                                             href={`/dashboard/posts/edit/${post.id}`}
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-blue-600"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-blue-600 cursor-pointer"
                                         >
                                             <span className="material-symbols-outlined text-[18px]">edit</span>
                                             <span>Edit</span>
@@ -196,11 +199,23 @@ const Page = () => {
                                 </div>
                             </div>
                         ))}
+
+                        {posts.length > visibleCount && (
+                            <div className="pt-4 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={handleLoadMore}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-white border border-gray-200 px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 hover:text-blue-600 cursor-pointer"
+                                >
+                                    <span>Load More Posts</span>
+                                    <span className="material-symbols-outlined text-[18px]">expand_more</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
 
-            {/* Post Delete Confirmation Modal */}
             <ConfirmationModal
                 isOpen={Boolean(postToDelete)}
                 onClose={() => !deletingId && setPostToDelete(null)}

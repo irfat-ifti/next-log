@@ -4,14 +4,13 @@ export default function NotFound() {
     return (
         <div className="min-h-[70vh] flex items-center justify-center px-6 py-16 mt-16">
             <div className="w-full max-w-2xl mx-auto text-center">
-                {/* 404 */}
+
                 <div className="mb-6">
                     <span className="text-[100px] sm:text-[140px] font-black leading-none tracking-tighter bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                         404
                     </span>
                 </div>
 
-                {/* Content */}
                 <div className="space-y-4">
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
                         Page not found
@@ -23,7 +22,6 @@ export default function NotFound() {
                     </p>
                 </div>
 
-                {/* Action */}
                 <div className="mt-8 flex justify-center">
                     <Link
                         href="/"

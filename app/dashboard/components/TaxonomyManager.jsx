@@ -16,7 +16,8 @@ const emptyForm = {
     canonicalUrl: "",
 };
 
-
+const INITIAL_ITEMS_COUNT = 24;
+const ITEMS_BATCH_SIZE = 24;
 
 export default function TaxonomyManager({
     type = "category",
@@ -33,6 +34,7 @@ export default function TaxonomyManager({
     toggleItemStatus,
 }) {
     const [items, setItems] = useState([]);
+    const [visibleCount, setVisibleCount] = useState(INITIAL_ITEMS_COUNT);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -46,6 +48,15 @@ export default function TaxonomyManager({
     const [slugAvailable, setSlugAvailable] = useState(null);
     const slugManuallyEdited = useRef(false);
     const slugDebounceTimer = useRef(null);
+
+    // Reset pagination when searching or changing status filter
+    useEffect(() => {
+        setVisibleCount(INITIAL_ITEMS_COUNT);
+    }, [search, statusFilter]);
+
+    const handleLoadMore = () => {
+        setVisibleCount((prev) => prev + ITEMS_BATCH_SIZE);
+    };
 
     // Initial load from API
     useEffect(() => {
@@ -366,7 +377,7 @@ export default function TaxonomyManager({
 
     return (
         <div className="flex-1 flex flex-col min-w-0 bg-slate-50 relative w-full">
-            {/* Header */}
+
             <div className="px-8 py-5 border-b border-slate-200/80 bg-white">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -404,10 +415,9 @@ export default function TaxonomyManager({
                 </div>
             </div>
 
-            {/* Content */}
             <main className="flex-1 p-6 md:p-8 overflow-y-auto">
                 <div className="max-w-7xl mx-auto">
-                    {/* Stats */}
+
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                             <p className="text-xs font-medium text-slate-500">
@@ -440,9 +450,8 @@ export default function TaxonomyManager({
                         </div>
                     </div>
 
-                    {/* Table Card */}
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                        {/* Toolbar */}
+
                         <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row gap-3 justify-between">
                             <div className="relative w-full md:max-w-sm">
                                 <svg
@@ -479,7 +488,6 @@ export default function TaxonomyManager({
                             </select>
                         </div>
 
-                        {/* Table */}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
@@ -508,7 +516,7 @@ export default function TaxonomyManager({
                                 </thead>
 
                                 <tbody className="divide-y divide-slate-100">
-                                    {filteredItems.map((item) => (
+                                    {filteredItems.slice(0, visibleCount).map((item) => (
                                         <tr
                                             key={item.id}
                                             className="hover:bg-slate-50/70 transition"
@@ -613,6 +621,21 @@ export default function TaxonomyManager({
                             </table>
                         </div>
 
+                        {!loading && filteredItems.length > visibleCount && (
+                            <div className="py-4 border-t border-slate-100 flex justify-center bg-slate-50/50">
+                                <button
+                                    type="button"
+                                    onClick={handleLoadMore}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-6 py-2.5 text-sm font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:text-blue-600 cursor-pointer"
+                                >
+                                    <span>Load More {title}</span>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
+
                         {loading && (
                             <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-500 text-sm">
                                 <TailSpin
@@ -641,7 +664,6 @@ export default function TaxonomyManager({
                 </div>
             </main>
 
-            {/* Create/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div
@@ -913,7 +935,6 @@ export default function TaxonomyManager({
                 </div>
             )}
 
-            {/* Delete Confirmation */}
             <ConfirmationModal
                 isOpen={Boolean(deleteTarget)}
                 onClose={() => !deleting && setDeleteTarget(null)}

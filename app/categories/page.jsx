@@ -16,19 +16,34 @@ export default function CategoriesPage() {
     const [error, setError] = useState(null);
 
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [isSearching, setIsSearching] = useState(false);
     const [sortBy, setSortBy] = useState("popular"); // 'popular' | 'alpha' | 'newest'
 
-    // Fetch initial categories
+    // Debounce the user input by 300ms
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim());
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     useEffect(() => {
         let isMounted = true;
 
-        async function fetchInitialCategories() {
-            setLoading(true);
+        async function fetchCategoriesData() {
+            if (debouncedSearch) {
+                setIsSearching(true);
+            } else {
+                setLoading(true);
+            }
             setError(null);
+
             try {
                 const res = await getCategories({
-                    pageSize: CATEGORIES_PER_PAGE,
+                    pageSize: debouncedSearch ? 50 : CATEGORIES_PER_PAGE,
                     status: "Active",
+                    search: debouncedSearch || null,
                     orderByField: sortBy === "alpha" ? "name" : sortBy === "newest" ? "createdAtTimestamp" : "posts",
                     orderDirection: sortBy === "alpha" ? "asc" : "desc",
                 });
@@ -37,7 +52,7 @@ export default function CategoriesPage() {
                     if (res.status) {
                         setCategories(res.data || []);
                         setLastDoc(res.lastDoc || null);
-                        setHasMore(Boolean(res.hasMore));
+                        setHasMore(Boolean(res.hasMore) && !debouncedSearch);
                     } else {
                         setError(res.errorMessage || "Failed to load categories");
                     }
@@ -49,20 +64,20 @@ export default function CategoriesPage() {
             } finally {
                 if (isMounted) {
                     setLoading(false);
+                    setIsSearching(false);
                 }
             }
         }
 
-        fetchInitialCategories();
+        fetchCategoriesData();
 
         return () => {
             isMounted = false;
         };
-    }, [sortBy]);
+    }, [sortBy, debouncedSearch]);
 
-    // Handle load more
     const handleLoadMore = async () => {
-        if (loadingMore || !hasMore || !lastDoc) return;
+        if (loadingMore || !hasMore || !lastDoc || debouncedSearch) return;
 
         setLoadingMore(true);
         try {
@@ -92,22 +107,22 @@ export default function CategoriesPage() {
         }
     };
 
-    // Filter categories by search
+    // Filter categories locally in case of instant search refinement
     const filteredCategories = useMemo(() => {
-        if (!searchQuery.trim()) return categories;
-        const q = searchQuery.toLowerCase().trim();
+        if (!debouncedSearch) return categories;
+        const q = debouncedSearch.toLowerCase().trim();
         return categories.filter(
             (c) =>
                 (c.name && c.name.toLowerCase().includes(q)) ||
                 (c.slug && c.slug.toLowerCase().includes(q)) ||
                 (c.description && c.description.toLowerCase().includes(q))
         );
-    }, [categories, searchQuery]);
+    }, [categories, debouncedSearch]);
 
     return (
         <div className="min-h-screen bg-gray-50/50 pb-20 pt-24">
             <div className="mx-auto max-w-6xl px-4">
-                {/* Hero Header */}
+
                 <div className="mb-8 text-center max-w-2xl mx-auto">
                     <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
                         <span className="material-symbols-outlined text-[16px]">category</span>
@@ -121,9 +136,8 @@ export default function CategoriesPage() {
                     </p>
                 </div>
 
-                {/* Search & Sort Controls */}
                 <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-                    {/* Search */}
+
                     <div className="relative w-full sm:max-w-md">
                         <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
                             search
@@ -146,7 +160,6 @@ export default function CategoriesPage() {
                         )}
                     </div>
 
-                    {/* Sort Options */}
                     <div className="flex items-center gap-1.5 self-end sm:self-center">
                         <span className="text-xs font-medium text-gray-400 mr-1 hidden sm:inline">Sort:</span>
                         <button
@@ -185,7 +198,6 @@ export default function CategoriesPage() {
                     </div>
                 </div>
 
-                {/* Categories Grid */}
                 {loading ? (
                     <LoadingSpinner size={46} label="Loading categories..." />
                 ) : error ? (
@@ -223,31 +235,31 @@ export default function CategoriesPage() {
                                 <Link
                                     key={category.id || catSlug}
                                     href={`/blog?category=${encodeURIComponent(catSlug)}`}
-                                    className="group relative flex flex-col justify-between rounded-2xl bg-white p-6 shadow-sm border border-gray-100 transition-all hover:border-blue-200 hover:shadow-md hover:-translate-y-0.5"
+                                    className="group relative flex flex-col justify-between rounded-2xl bg-white p-6 shadow-xs border border-gray-100 transition-all duration-200 hover:border-blue-200 hover:shadow-md hover:-translate-y-0.5"
                                 >
                                     <div>
-                                        <div className="flex items-center justify-between gap-2 mb-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
-                                                    <span className="material-symbols-outlined text-[20px]">folder</span>
-                                                </div>
-                                                <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition">
-                                                    {category.name}
-                                                </h2>
+
+                                        <div className="flex items-center justify-between gap-3 mb-4">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white shadow-xs">
+                                                <span className="material-symbols-outlined text-[22px]">folder</span>
                                             </div>
-                                            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition">
+                                            <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600 transition-colors group-hover:bg-blue-50 group-hover:text-blue-600">
                                                 {postCount} {postCount === 1 ? "article" : "articles"}
                                             </span>
                                         </div>
 
-                                        <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+                                        <h2 className="text-lg font-bold tracking-tight text-gray-900 transition-colors group-hover:text-blue-600 leading-snug line-clamp-2">
+                                            {category.name}
+                                        </h2>
+
+                                        <p className="mt-2 text-sm text-gray-500 line-clamp-2 leading-relaxed">
                                             {category.description || "Discover high quality articles, tutorials, and discussions in this category."}
                                         </p>
                                     </div>
 
-                                    <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:translate-x-1 transition-transform">
+                                    <div className="mt-5 pt-4 border-t border-gray-50 flex items-center gap-1.5 text-xs font-semibold text-blue-600 transition-colors group-hover:text-blue-700">
                                         <span>View Articles</span>
-                                        <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                                        <span className="material-symbols-outlined text-[15px] transition-transform duration-200 group-hover:translate-x-1">arrow_forward</span>
                                     </div>
                                 </Link>
                             );
@@ -255,7 +267,6 @@ export default function CategoriesPage() {
                     </div>
                 )}
 
-                {/* Load More Button for Scale (Thousands of Categories) */}
                 {!loading && !error && filteredCategories.length > 0 && hasMore && (
                     <div className="mt-12 flex justify-center">
                         <button

@@ -8,7 +8,7 @@ export const metadata = {
 export default function AboutPage() {
     return (
         <div className="w-full pt-20 pb-16">
-            {/* Hero Section */}
+
             <div className="mx-auto max-w-4xl px-4 py-12 text-center sm:py-16">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-blue-700">
                     <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
@@ -22,10 +22,9 @@ export default function AboutPage() {
                 </p>
             </div>
 
-            {/* Core Values / Feature Cards */}
             <div className="mx-auto max-w-5xl px-4 py-8">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {/* Card 1 */}
+
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs hover:shadow-md transition-shadow">
                         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                             <span className="material-symbols-outlined text-[24px]">terminal</span>
@@ -36,7 +35,6 @@ export default function AboutPage() {
                         </p>
                     </div>
 
-                    {/* Card 2 */}
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs hover:shadow-md transition-shadow">
                         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                             <span className="material-symbols-outlined text-[24px]">bolt</span>
@@ -47,7 +45,6 @@ export default function AboutPage() {
                         </p>
                     </div>
 
-                    {/* Card 3 */}
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs hover:shadow-md transition-shadow">
                         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
                             <span className="material-symbols-outlined text-[24px]">public</span>
@@ -60,7 +57,6 @@ export default function AboutPage() {
                 </div>
             </div>
 
-            {/* Detailed Narrative Section */}
             <div className="mx-auto max-w-3xl px-4 py-12">
                 <div className="rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/70 p-8 sm:p-12 shadow-xs space-y-6 text-gray-700 leading-relaxed text-base sm:text-lg">
                     <h3 className="text-2xl font-bold tracking-tight text-gray-950">

@@ -39,7 +39,7 @@ const Page = () => {
         <main className="min-h-screen bg-gray-50 px-4 py-16">
             <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center justify-center">
                 <div className="w-full rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-                    {/* Header */}
+
                     <div className="mb-8 text-center">
 
                         <Link
@@ -55,9 +55,9 @@ const Page = () => {
                             Sign in to continue to your NextLog account.
                         </p>
                     </div>
-                    {/* Login Form */}
+
                     <form onSubmit={handleLogin} className="space-y-5">
-                        {/* Email */}
+
                         <div>
                             <label
                                 htmlFor="email"
@@ -75,7 +75,7 @@ const Page = () => {
                                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </div>
-                        {/* Password */}
+
                         <div>
                             <div className="mb-2 flex items-center justify-between">
                                 <label
@@ -95,7 +95,7 @@ const Page = () => {
                                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </div>
-                        {/* Submit */}
+
                         <button
                             type="submit"
                             disabled={loading}
@@ -111,7 +111,7 @@ const Page = () => {
                             )}
                         </button>
                     </form>
-                    {/* Signup Link */}
+
                     <p className="mt-6 text-center text-sm text-gray-500">
                         Don&apos;t have an account?{" "}
                         <Link

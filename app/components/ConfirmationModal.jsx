@@ -67,7 +67,7 @@ export default function ConfirmationModal({
                     aria-modal="true"
                     aria-labelledby="modal-headline"
                 >
-                    {/* Backdrop */}
+
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -77,7 +77,6 @@ export default function ConfirmationModal({
                         className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
                     />
 
-                    {/* Modal Card */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 15 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -90,7 +89,7 @@ export default function ConfirmationModal({
                         className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5"
                     >
                         <div className="flex items-start gap-4">
-                            {/* Icon Circle */}
+
                             <div
                                 className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${currentVariant.iconBg}`}
                             >
@@ -99,7 +98,6 @@ export default function ConfirmationModal({
                                 </span>
                             </div>
 
-                            {/* Content */}
                             <div className="flex-1">
                                 <h3
                                     id="modal-headline"
@@ -117,7 +115,6 @@ export default function ConfirmationModal({
                             </div>
                         </div>
 
-                        {/* Actions */}
                         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
                             <button
                                 type="button"

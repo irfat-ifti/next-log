@@ -20,7 +20,7 @@ const BlogCard = ({ blog, variant }) => {
                 className="article-item group flex flex-col items-start gap-4 rounded-xl bg-white p-4 shadow-sm transition-all hover:shadow-md md:flex-row lg:gap-6 lg:p-6"
                 data-cat={blog?.category?.toLowerCase().replace(/\s+/g, "-") || "all"}
             >
-                {/* Article Image */}
+
                 <Link href={`/blog/${blog?.slug}`}>
                     <div className="relative h-48 w-full shrink-0 overflow-hidden rounded-lg bg-gray-100 md:h-44 md:w-72 lg:w-80">
                         {verticalImageSrc ? (
@@ -43,25 +43,22 @@ const BlogCard = ({ blog, variant }) => {
                     </div>
                 </Link>
 
-                {/* Article Content */}
                 <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
                     <div>
-                        {/* Title */}
+
                         <Link href={`/blog/${blog.slug}`}>
                             <h2 className="line-clamp-2 text-xl font-bold text-gray-900 transition-colors group-hover:text-blue-600">
                                 {blog.title}
                             </h2>
                         </Link>
 
-                        {/* Description */}
                         <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-500">
                             {blog.excerpt}
                         </p>
                     </div>
 
-                    {/* Author & Tags */}
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-gray-100 pt-3">
-                        {/* Author */}
+
                         <div className="flex items-center gap-2.5">
                             {authorUid ? (
                                 <Link href={`/author/${authorUid}`} className="group/author flex items-center gap-2.5">
@@ -104,7 +101,6 @@ const BlogCard = ({ blog, variant }) => {
                             )}
                         </div>
 
-                        {/* Tags */}
                         <div className="flex items-center gap-1.5">
                             {blog?.tags?.slice(0, 3).map((tag, i) => {
                                 const tagName = typeof tag === "object" ? tag.name : tag;
@@ -165,7 +161,6 @@ const BlogCard = ({ blog, variant }) => {
                         )}
                     </div>
 
-                    {/* Category */}
                     {blog?.category && (
                         <span className="absolute left-4 top-4 z-10 rounded-md px-2.5 py-1 text-sm font-semibold text-blue-600 shadow-sm backdrop-blur bg-white/70">
                             {blog.category}

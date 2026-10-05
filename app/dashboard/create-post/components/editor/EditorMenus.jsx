@@ -86,7 +86,7 @@ const EditorMenus = ({ editor }) => {
 
     return (
         <>
-            {/* Selection menu */}
+
             <BubbleMenu
                 editor={editor}
                 options={{ placement: 'top' }}
@@ -149,7 +149,6 @@ const EditorMenus = ({ editor }) => {
                 <LinkControl editor={editor} variant='menu' />
             </BubbleMenu>
 
-            {/* Empty-line menu */}
             <FloatingMenu
                 editor={editor}
                 options={{ placement: 'top' }}

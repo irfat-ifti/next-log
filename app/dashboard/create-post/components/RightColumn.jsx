@@ -16,7 +16,7 @@ const RightColumn = ({
 }) => {
     return (
         <div className="lg:col-span-4 space-y-6">
-            {/* Card: Post Settings */}
+
             <section
                 className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5"
                 data-purpose="post-settings-sidebar"
@@ -40,7 +40,6 @@ const RightColumn = ({
                     <h2 className="text-sm font-bold text-slate-900">Post Settings</h2>
                 </div>
 
-                {/* Status Selector */}
                 <div>
                     <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                         Status
@@ -57,37 +56,6 @@ const RightColumn = ({
                     </div>
                 </div>
 
-                {/* Published At DateTime */}
-                {/* <div>
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Published At
-                    </label>
-                    <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                />
-                            </svg>
-                        </span>
-                        <input
-                            className="w-full pl-9 pr-3 text-xs text-slate-700 font-mono border border-slate-200 rounded-lg focus:border-blue-500 outline-none py-2"
-                            type="datetime-local"
-                            value={publishDate || ""}
-                            onChange={(e) => setPublishDate(e.target.value)}
-                        />
-                    </div>
-                </div> */}
-
-                {/* Meta Title Field with Counter */}
                 <div>
                     <div className="flex items-center justify-between mb-1.5">
                         <label
@@ -110,7 +78,6 @@ const RightColumn = ({
                     />
                 </div>
 
-                {/* Meta Description Field with Counter */}
                 <div>
                     <div className="flex items-center justify-between mb-1.5">
                         <label
@@ -133,7 +100,6 @@ const RightColumn = ({
                     />
                 </div>
 
-                {/* Keywords Chips Area */}
                 <div>
                     <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                         Keywords
@@ -177,115 +143,8 @@ const RightColumn = ({
                     </div>
                 </div>
 
-                {/* OG Image Box */}
-                {/* <div>
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                        OG Image URL (Optional)
-                    </label>
-                    <input
-                        type="text"
-                        placeholder="https://example.com/og-image.jpg"
-                        value={ogImage || ""}
-                        onChange={(e) => setOgImage(e.target.value)}
-                        className="w-full border border-slate-200 text-xs text-slate-800 rounded-lg py-2 px-3 outline-none focus:border-blue-500"
-                    />
-                </div> */}
             </section>
 
-            {/* Card: Related Posts */}
-            {/* <section
-                className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4"
-                data-purpose="related-posts-card"
-            >
-                <div className="flex items-center gap-2 pb-2">
-                    <span className="p-1 rounded-md bg-blue-50 text-blue-600">
-                        <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                            />
-                        </svg>
-                    </span>
-                    <h2 className="text-sm font-bold text-slate-900">Related Posts</h2>
-                </div>
-
-                <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <svg
-                            className="w-3.5 h-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                            />
-                        </svg>
-                    </span>
-                    <input
-                        className="w-full pl-8 text-xs text-slate-700 border border-slate-200 rounded-lg focus:border-blue-500 outline-none py-1.5"
-                        placeholder="Search related posts..."
-                        type="text"
-                    />
-                </div>
-                <div className="space-y-3 pt-1">
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                            defaultChecked
-                            className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            type="checkbox"
-                        />
-                        <div className="leading-snug">
-                            <p className="text-xs font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                                Understanding React Server Components
-                            </p>
-                            <p className="text-[11px] text-slate-400">
-                                /blog/understanding-react-server-components
-                            </p>
-                        </div>
-                    </label>
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                            className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            type="checkbox"
-                        />
-                        <div className="leading-snug">
-                            <p className="text-xs font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                                Next.js Dynamic Routing Explained
-                            </p>
-                            <p className="text-[11px] text-slate-400">
-                                /blog/nextjs-dynamic-routing-explained
-                            </p>
-                        </div>
-                    </label>
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                            className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            type="checkbox"
-                        />
-                        <div className="leading-snug">
-                            <p className="text-xs font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                                Getting Started with TypeScript
-                            </p>
-                            <p className="text-[11px] text-slate-400">
-                                /blog/getting-started-typescript
-                            </p>
-                        </div>
-                    </label>
-                </div>
-            </section> */}
-
-            {/* Card: Comments Switch Setting */}
             <section
                 className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between"
                 data-purpose="comments-setting-card"
@@ -314,7 +173,6 @@ const RightColumn = ({
                     </div>
                 </div>
 
-                {/* Active Toggle Button */}
                 <label className="relative inline-flex items-center cursor-pointer">
                     <input
                         type="checkbox"

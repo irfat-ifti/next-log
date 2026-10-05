@@ -17,20 +17,29 @@ export default function TagsPage() {
     const [error, setError] = useState(null);
 
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [selectedLetter, setSelectedLetter] = useState("ALL");
     const [sortBy, setSortBy] = useState("popular"); // 'popular' | 'alpha'
 
-    // Fetch initial tags
+    // Debounce the search input by 300ms
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim());
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     useEffect(() => {
         let isMounted = true;
 
-        async function fetchInitialTags() {
+        async function fetchTagsData() {
             setLoading(true);
             setError(null);
             try {
                 const res = await getTags({
-                    pageSize: TAGS_PER_PAGE,
+                    pageSize: debouncedSearch ? 50 : TAGS_PER_PAGE,
                     status: "Active",
+                    search: debouncedSearch || null,
                     orderByField: sortBy === "alpha" ? "name" : "posts",
                     orderDirection: sortBy === "alpha" ? "asc" : "desc",
                 });
@@ -39,7 +48,7 @@ export default function TagsPage() {
                     if (res.status) {
                         setTags(res.data || []);
                         setLastDoc(res.lastDoc || null);
-                        setHasMore(Boolean(res.hasMore));
+                        setHasMore(Boolean(res.hasMore) && !debouncedSearch);
                     } else {
                         setError(res.errorMessage || "Failed to load tags");
                     }
@@ -55,16 +64,15 @@ export default function TagsPage() {
             }
         }
 
-        fetchInitialTags();
+        fetchTagsData();
 
         return () => {
             isMounted = false;
         };
-    }, [sortBy]);
+    }, [sortBy, debouncedSearch]);
 
-    // Handle load more
     const handleLoadMore = async () => {
-        if (loadingMore || !hasMore || !lastDoc) return;
+        if (loadingMore || !hasMore || !lastDoc || debouncedSearch) return;
 
         setLoadingMore(true);
         try {
@@ -98,7 +106,7 @@ export default function TagsPage() {
     const filteredTags = useMemo(() => {
         return tags.filter((t) => {
             const name = (t.name || "").toLowerCase();
-            const q = searchQuery.toLowerCase().trim();
+            const q = debouncedSearch.toLowerCase().trim();
             const matchesSearch = !q || name.includes(q) || (t.description && t.description.toLowerCase().includes(q));
 
             const matchesLetter =
@@ -107,12 +115,12 @@ export default function TagsPage() {
 
             return matchesSearch && matchesLetter;
         });
-    }, [tags, searchQuery, selectedLetter]);
+    }, [tags, debouncedSearch, selectedLetter]);
 
     return (
         <div className="min-h-screen bg-gray-50/50 pb-20 pt-24">
             <div className="mx-auto max-w-6xl px-4">
-                {/* Hero Header */}
+
                 <div className="mb-8 text-center max-w-2xl mx-auto">
                     <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
                         <span className="material-symbols-outlined text-[16px]">tag</span>
@@ -126,9 +134,8 @@ export default function TagsPage() {
                     </p>
                 </div>
 
-                {/* Search & Sort Controls */}
                 <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-                    {/* Search Input */}
+
                     <div className="relative w-full sm:max-w-md">
                         <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
                             search
@@ -151,7 +158,6 @@ export default function TagsPage() {
                         )}
                     </div>
 
-                    {/* Sort Options */}
                     <div className="flex items-center gap-1.5 self-end sm:self-center">
                         <span className="text-xs font-medium text-gray-400 mr-1 hidden sm:inline">Sort:</span>
                         <button
@@ -179,7 +185,6 @@ export default function TagsPage() {
                     </div>
                 </div>
 
-                {/* Alphabetical Quick Filter Bar (Great for browsing thousands of tags) */}
                 <div className="mb-8 flex items-center gap-1 overflow-x-auto rounded-xl bg-white p-2.5 shadow-sm border border-gray-100 scrollbar-none">
                     <button
                         type="button"
@@ -208,7 +213,6 @@ export default function TagsPage() {
                     ))}
                 </div>
 
-                {/* Tags Grid */}
                 {loading ? (
                     <LoadingSpinner size={46} label="Loading tags..." />
                 ) : error ? (
@@ -269,7 +273,6 @@ export default function TagsPage() {
                     </div>
                 )}
 
-                {/* Load More Button for Scale (Thousands of Tags) */}
                 {!loading && !error && filteredTags.length > 0 && hasMore && (
                     <div className="mt-12 flex justify-center">
                         <button

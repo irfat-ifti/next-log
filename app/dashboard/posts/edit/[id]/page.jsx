@@ -45,7 +45,6 @@ const EditPostPage = () => {
     // Increments after data loads so LeftColumn/RightColumn remount with correct data
     const [dataVersion, setDataVersion] = useState(0);
 
-    // Fetch existing post details
     useEffect(() => {
         if (!postId) return;
 
@@ -85,7 +84,6 @@ const EditPostPage = () => {
                     );
                     setSlugAvailable(true);
 
-                    // Set initial editor content
                     const editorVal = post.content || post.contentHtml || "";
                     setInitialEditorContent(editorVal);
                     setContent({
@@ -213,7 +211,6 @@ const EditPostPage = () => {
                 type: "success",
             });
 
-            // Redirect back to dashboard posts list
             router.push("/dashboard/posts");
         } catch (error) {
             console.error("handleUpdate error:", error);
@@ -250,7 +247,7 @@ const EditPostPage = () => {
 
     return (
         <div className="flex-1 flex flex-col min-w-0">
-            {/* Header & Actions */}
+
             <div className="px-8 py-5 border-b border-slate-200/80 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <Link
@@ -280,9 +277,8 @@ const EditPostPage = () => {
                     </p>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex items-center gap-3">
-                    {/* Save Draft */}
+
                     <button
                         className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                         type="button"
@@ -309,7 +305,6 @@ const EditPostPage = () => {
                         <span>{loading && loadingAction === "draft" ? "Saving..." : "Save Draft"}</span>
                     </button>
 
-                    {/* Update / Publish */}
                     <button
                         className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                         type="button"
@@ -343,7 +338,6 @@ const EditPostPage = () => {
                 </div>
             </div>
 
-            {/* Main Content Form */}
             <main className="flex-1 p-6 md:p-8 overflow-y-auto">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <LeftColumn

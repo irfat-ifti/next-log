@@ -68,17 +68,16 @@ export default function DashboardLayout({ children }) {
     return (
         <ProtectedRoute>
             <div className="mt-16 flex min-h-[calc(100vh-4rem)] bg-gray-50/60">
-                {/* Modern Consistent Sidebar */}
+
                 <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 flex-col justify-between border-r border-gray-200 bg-white md:flex">
                     <div className="flex flex-col overflow-y-auto p-4">
-                        {/* Dashboard section title */}
+
                         <div className="px-3 pb-3 pt-2">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
                                 Management
                             </span>
                         </div>
 
-                        {/* Navigation Links */}
                         <nav className="space-y-1 text-sm font-medium">
                             {navItems.map((item) => {
                                 const active = isTabActive(item.href);
@@ -108,7 +107,6 @@ export default function DashboardLayout({ children }) {
                         </nav>
                     </div>
 
-                    {/* Current User Profile Footer */}
                     <div className="border-t border-gray-100 p-3">
                         <Link
                             href="/dashboard/profile"
@@ -140,7 +138,6 @@ export default function DashboardLayout({ children }) {
                     </div>
                 </aside>
 
-                {/* Mobile Dashboard Navigation Tabs */}
                 <div className="flex md:hidden border-b border-gray-200 bg-white sticky top-16 z-20 w-full overflow-x-auto px-3 py-2.5 shadow-xs">
                     <div className="flex items-center gap-1 min-w-full">
                         {navItems.map((item) => {
@@ -165,7 +162,6 @@ export default function DashboardLayout({ children }) {
                     </div>
                 </div>
 
-                {/* Main Content Area */}
                 <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
                     {children}
                 </main>

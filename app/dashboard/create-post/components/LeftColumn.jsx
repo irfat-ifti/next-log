@@ -36,7 +36,6 @@ const LeftColumn = ({
     const debounceRef = useRef(null);
     const [isSlugChecking, setIsSlugChecking] = useState(false);
 
-    // Derive image preview directly without cascading renders
     const imagePreview = useMemo(() => {
         if (!featuredImage) return null;
         if (typeof window !== "undefined" && featuredImage instanceof File) {
@@ -128,13 +127,11 @@ const LeftColumn = ({
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // 5MB validation
         if (file.size > 5 * 1024 * 1024) {
             ShowToast({ message: "Image must be less than 5MB", type: "warning" });
             return;
         }
 
-        // Image validation
         if (!file.type.startsWith("image/")) {
             ShowToast({ message: "Please select a valid image file", type: "warning" });
             return;
@@ -198,7 +195,7 @@ const LeftColumn = ({
 
     return (
         <div className="lg:col-span-8 space-y-6">
-            {/* Card: Basic Information */}
+
             <section
                 className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5"
                 data-purpose="basic-information-card"
@@ -225,21 +222,8 @@ const LeftColumn = ({
                         </h2>
                     </div>
 
-                    {/* Featured Post checkbox */}
-                    {/* <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                            type="checkbox"
-                            checked={Boolean(isFeatured)}
-                            onChange={(e) => setIsFeatured(e.target.checked)}
-                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                        />
-                        <span className="text-xs font-semibold text-slate-700">
-                            Featured Post
-                        </span>
-                    </label> */}
                 </div>
 
-                {/* Title Field */}
                 <div>
                     <label
                         className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
@@ -257,7 +241,6 @@ const LeftColumn = ({
                     />
                 </div>
 
-                {/* Slug Field with Availability Badge */}
                 <div>
                     <div className="flex items-center justify-between mb-1.5">
                         <label
@@ -266,7 +249,7 @@ const LeftColumn = ({
                         >
                             Slug <span className="text-red-500">*</span>
                         </label>
-                        {/* Only show badge when slug field has a value */}
+
                         {slug && slug.trim() ? (
                             isSlugChecking ? (
                                 <span className="inline-flex items-center text-xs font-medium text-slate-500 gap-1.5">
@@ -321,7 +304,6 @@ const LeftColumn = ({
                     />
                 </div>
 
-                {/* Excerpt Field */}
                 <div>
                     <label
                         className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
@@ -339,9 +321,8 @@ const LeftColumn = ({
                     />
                 </div>
 
-                {/* Meta Row: Category, Tags */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                    {/* Category Select */}
+
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                             Category
@@ -362,7 +343,6 @@ const LeftColumn = ({
                         </div>
                     </div>
 
-                    {/* Tags Multi-Select Input Box (synced with parent tags state) */}
                     <TagSelector
                         tagList={tagList}
                         selectedTags={tags || []}
@@ -370,7 +350,6 @@ const LeftColumn = ({
                     />
                 </div>
 
-                {/* Featured Image Upload Container */}
                 <div>
                     <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                         Featured Image
@@ -379,7 +358,7 @@ const LeftColumn = ({
                     <div className="border border-slate-200 rounded-xl p-4 bg-white">
                         {imagePreview ? (
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                                {/* Image preview */}
+
                                 <div className="relative w-56 h-32 shrink-0 overflow-hidden rounded-lg border border-slate-200">
                                     <Image
                                         src={imagePreview}
@@ -400,7 +379,6 @@ const LeftColumn = ({
                                     </button>
                                 </div>
 
-                                {/* Info */}
                                 <div>
                                     <button
                                         type="button"
@@ -471,7 +449,6 @@ const LeftColumn = ({
                 </div>
             </section>
 
-            {/* Card: Content Rich Editor */}
             <TextEditor onChange={setContent} initialContent={initialContent} />
         </div>
     );

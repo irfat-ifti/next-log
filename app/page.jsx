@@ -8,7 +8,7 @@ import { getPopularTags } from "@/app/lib/api/tag";
 import Link from "next/link";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 
-const HOME_POSTS_LIMIT = 4;
+const HOME_POSTS_LIMIT = 12;
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -20,7 +20,6 @@ export default function Home() {
     async function fetchData() {
       try {
         setLoading(true);
-        // Call getPosts with exact limit desired for home page
         const [postsResult, tagsResult] = await Promise.all([
           getPosts({ pageSize: HOME_POSTS_LIMIT }),
           getPopularTags(8),
@@ -35,7 +34,6 @@ export default function Home() {
         if (tagsResult?.status && tagsResult.data.length > 0) {
           setPopularTags(tagsResult.data);
         } else {
-          // Fallback popular topics if no tags in database yet
           setPopularTags([
             { id: "1", name: "Technology", slug: "technology" },
             { id: "2", name: "Programming", slug: "programming" },
@@ -55,25 +53,20 @@ export default function Home() {
 
   return (
     <>
-      {/* Hero Section */}
       <section className="mt-16.25 mx-auto flex max-w-4xl flex-col items-start py-16 text-left sm:items-center sm:text-center px-4">
-        {/* Editorial Pill */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50/70 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-blue-700 shadow-xs">
           <span className="h-2 w-2 animate-pulse rounded-full bg-blue-600" />
           <span>Engineering Thought Leadership &bull; Open Platform</span>
         </div>
 
-        {/* Heading */}
         <h1 className="mb-5 text-4xl font-extrabold tracking-tight text-gray-950 sm:text-5xl lg:text-6xl sm:leading-[1.15]">
           Where Modern Developers Write, Think, and Build in Public.
         </h1>
 
-        {/* Editorial Subtitle */}
         <p className="mb-8 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg">
           Deep-dives into architecture patterns, modern frameworks, and hard-earned engineering insights. Crafted by software engineers, read by passionate builders worldwide.
         </p>
 
-        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-3.5">
           <a
             href="#latest"
@@ -93,7 +86,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Popular Topics */}
       <section className="mb-16 max-w-6xl mx-auto w-full px-4">
         <div className="mb-4 flex items-center justify-between gap-4 border-b border-gray-200 pb-2">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
@@ -129,9 +121,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Latest Articles */}
       <section id="latest" className="mb-16 max-w-6xl mx-auto w-full px-4">
-        {/* Section Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Latest Editorial Dispatches</h2>
@@ -139,7 +129,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Posts Grid */}
         {loading ? (
           <LoadingSpinner size={44} label="Loading latest articles..." />
         ) : error ? (
@@ -148,7 +137,7 @@ export default function Home() {
             <p className="mt-3 text-base font-medium text-red-500">{error}</p>
             <button
               onClick={() => { setLoading(true); setError(null); getPosts({ pageSize: HOME_POSTS_LIMIT }).then(r => { setPosts(r.data || []); setLoading(false); }).catch(e => { setError(e.message); setLoading(false); }); }}
-              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer"
             >
               Retry
             </button>
@@ -174,7 +163,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Load More */}
         {!loading && !error && posts.length > 0 && (
           <div className="mt-8 text-center">
             <Link

@@ -116,7 +116,7 @@ const RichTextEditor = ({
             className={`bg-white rounded-xl border border-slate-200 shadow-sm overflow-visible ${className}`}
             data-purpose='content-editor-card'
         >
-            {/* Header + toolbar */}
+
             <div className='px-6 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3'>
                 <div className='flex items-center gap-2'>
                     <span className='p-1 rounded-md bg-blue-50 text-blue-600'>
@@ -141,12 +141,10 @@ const RichTextEditor = ({
 
             <EditorMenus editor={editor} />
 
-            {/* Editor canvas */}
             <div className='p-6 text-sm text-slate-700 leading-relaxed font-normal'>
                 <EditorContent editor={editor} />
             </div>
 
-            {/* Status bar: counts come from the CharacterCount extension */}
             <div className='px-6 py-2.5 border-t border-slate-200 flex items-center justify-between gap-3 text-[11px] text-slate-500'>
                 <span>
                     Markdown shortcuts: <code className='font-mono'># </code> heading ·{' '}

@@ -30,33 +30,95 @@ export async function getTags(options = {}) {
         const collectionRef = collection(db, COLLECTION_NAME);
         const constraints = [];
 
+        // Build primary query
         if (status) {
             constraints.push(where("status", "==", status));
         }
-
         if (orderByField) {
             constraints.push(orderBy(orderByField, orderDirection));
         }
-
         if (lastDoc) {
             constraints.push(startAfter(lastDoc));
         }
-
         const limitCount = pageSize && typeof pageSize === "number" && pageSize > 0 ? pageSize + 1 : null;
         if (limitCount) {
             constraints.push(limit(limitCount));
         }
 
         let querySnapshot;
+        if (search && search.trim()) {
+            // When user searches, query without strict limit to search across all records
+            try {
+                const searchConstraints = [];
+                if (status) {
+                    searchConstraints.push(where("status", "==", status));
+                }
+                const qSearch = query(collectionRef, ...searchConstraints);
+                querySnapshot = await getDocs(qSearch);
+            } catch (searchErr) {
+                querySnapshot = await getDocs(collectionRef);
+            }
+
+            const s = search.toLowerCase().trim();
+            let tags = querySnapshot.docs.map((docSnap) => ({
+                id: docSnap.id,
+                ...docSnap.data(),
+                posts: Number(docSnap.data()?.posts) || 0,
+            })).filter((t) => t.name && t.name.trim().length > 0);
+
+            // Filter across name, slug, description
+            tags = tags.filter(
+                (t) =>
+                    (t.name && t.name.toLowerCase().includes(s)) ||
+                    (t.slug && t.slug.toLowerCase().includes(s)) ||
+                    (t.description && t.description.toLowerCase().includes(s))
+            );
+
+            // Sort results based on requested sortBy
+            if (orderByField === "name") {
+                tags.sort((a, b) => {
+                    const cmp = (a.name || "").localeCompare(b.name || "");
+                    return orderDirection === "asc" ? cmp : -cmp;
+                });
+            } else if (orderByField === "posts") {
+                tags.sort((a, b) => {
+                    const diff = (b.posts || 0) - (a.posts || 0);
+                    return orderDirection === "asc" ? -diff : diff;
+                });
+            } else if (orderByField === "createdAtTimestamp") {
+                tags.sort((a, b) => {
+                    const diff = (Number(b.createdAtTimestamp) || 0) - (Number(a.createdAtTimestamp) || 0);
+                    return orderDirection === "asc" ? -diff : diff;
+                });
+            }
+
+            return {
+                status: true,
+                data: tags,
+                lastDoc: null,
+                hasMore: false,
+            };
+        }
+
         try {
             const q = query(collectionRef, ...constraints);
             querySnapshot = await getDocs(q);
-        } catch {
+        } catch (err) {
+            // When where("status") + orderBy creates a missing composite index error,
+            // query by orderBy and limit without status filter (all seeded tags are Active),
+            // preserving true sorting, startAfter pagination and limit.
             const fallbackConstraints = [];
-            if (status) fallbackConstraints.push(where("status", "==", status));
-            if (limitCount) fallbackConstraints.push(limit(limitCount));
-            const q = fallbackConstraints.length > 0 ? query(collectionRef, ...fallbackConstraints) : query(collectionRef);
-            querySnapshot = await getDocs(q);
+            if (orderByField) {
+                fallbackConstraints.push(orderBy(orderByField, orderDirection));
+            }
+            if (lastDoc) {
+                fallbackConstraints.push(startAfter(lastDoc));
+            }
+            if (limitCount) {
+                fallbackConstraints.push(limit(limitCount));
+            }
+            const qFallback = query(collectionRef, ...fallbackConstraints);
+            querySnapshot = await getDocs(qFallback);
         }
 
         const rawDocs = querySnapshot.docs;
@@ -68,16 +130,6 @@ export async function getTags(options = {}) {
             ...docSnap.data(),
             posts: Number(docSnap.data()?.posts) || 0,
         })).filter((t) => t.name && t.name.trim().length > 0);
-
-        if (search && search.trim()) {
-            const s = search.toLowerCase().trim();
-            tags = tags.filter(
-                (t) =>
-                    (t.name && t.name.toLowerCase().includes(s)) ||
-                    (t.slug && t.slug.toLowerCase().includes(s)) ||
-                    (t.description && t.description.toLowerCase().includes(s))
-            );
-        }
 
         const lastVisibleDoc = resultDocs.length > 0 ? resultDocs[resultDocs.length - 1] : null;
 

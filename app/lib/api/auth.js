@@ -11,7 +11,6 @@ import {
 
 import { auth, db } from "@/app/services/firebase";
 
-
 export async function login(email, password) {
     try {
         const userCredential = await signInWithEmailAndPassword(
@@ -37,7 +36,6 @@ export async function login(email, password) {
     }
 }
 
-
 export async function signup(name, email, password) {
     try {
         // 1. Create Firebase Auth account
@@ -50,12 +48,10 @@ export async function signup(name, email, password) {
 
         const user = userCredential.user;
 
-
         // 2. Add display name to Auth profile
         await updateProfile(user, {
             displayName: name,
         });
-
 
         // 3. Create Firestore user document
         const userInformation = {
@@ -73,13 +69,11 @@ export async function signup(name, email, password) {
             updatedAt: Date.now(),
         };
 
-
         // 4. Document ID = Firebase Auth UID
         await setDoc(
             doc(db, "users", user.uid),
             userInformation
         );
-
 
         return {
             status: true,
@@ -186,4 +180,3 @@ export async function updateUserProfile(uid, profileData) {
         };
     }
 }
-

@@ -4,7 +4,6 @@ import { db } from "@/app/services/firebase";
 export default async function sitemap() {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://next-log.vercel.app";
 
-    // Static core pages
     const routes = [
         "",
         "/blog",
@@ -19,7 +18,6 @@ export default async function sitemap() {
     }));
 
     try {
-        // Fetch all published posts from Firestore
         const postsQuery = query(
             collection(db, "posts"),
             where("status", "==", "published")
@@ -46,7 +44,6 @@ export default async function sitemap() {
             };
         });
 
-        // Fetch categories
         let categoryUrls = [];
         try {
             const categoriesSnap = await getDocs(collection(db, "categories"));
@@ -67,7 +64,6 @@ export default async function sitemap() {
             console.error("Sitemap categories fetch error:", catErr);
         }
 
-        // Fetch tags
         let tagUrls = [];
         try {
             const tagsSnap = await getDocs(collection(db, "tags"));

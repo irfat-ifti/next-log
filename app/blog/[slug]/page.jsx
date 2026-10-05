@@ -6,7 +6,6 @@ import { cache } from "react";
 import Comments from "@/app/blog/components/Comments";
 import { getCommentsByPostId } from "@/app/lib/api/comment";
 
-
 const getPost = cache(async (slug) => {
     return await getPostBySlug(slug)
 })
@@ -64,7 +63,6 @@ export async function generateMetadata({ params }) {
     };
 }
 
-
 const Page = async ({ params }) => {
     const { slug } = await params;
     const res = await getPost(slug);
@@ -103,7 +101,6 @@ const Page = async ({ params }) => {
 
     const serializedBlog = serializeFirestoreData(blog);
     const serializedComments = serializeFirestoreData(comments);
-
 
     const authorName =
         typeof blog?.author === "object" ? blog?.author?.name : "";
@@ -184,7 +181,7 @@ const Page = async ({ params }) => {
 
     return (
         <div className='my-25'>
-            {/* JSON-LD Structured Data for Search Engines */}
+
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -224,7 +221,7 @@ const Page = async ({ params }) => {
                     </span>
                 </nav>
                 <header className="flex flex-col gap-4 mt-8">
-                    {/* Category & Subcategory */}
+
                     <div className="flex items-center gap-3">
                         <Link
                             href={`/blog?category=${encodeURIComponent((categoryName || "").toLowerCase().trim().replace(/\s+/g, "-"))}`}
@@ -240,19 +237,16 @@ const Page = async ({ params }) => {
                         </span>
                     </div>
 
-                    {/* Title */}
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
                         {blog?.title}
                     </h1>
 
-                    {/* Description */}
                     <p className="text-base leading-relaxed text-gray-500 sm:text-lg">
                         {postDescription}
                     </p>
 
-                    {/* Author Metadata & Social Share Row */}
                     <div className="flex flex-col justify-between gap-4 border-t border-gray-100 pt-4 sm:flex-row sm:items-center">
-                        {/* Author */}
+
                         <div className="flex items-center gap-3">
                             {authorUid ? (
                                 <Link href={`/author/${authorUid}`} className="group/author flex items-center gap-3">
@@ -328,7 +322,6 @@ const Page = async ({ params }) => {
                                 </>
                             )}
                         </div>
-
 
                     </div>
                 </header>
@@ -411,7 +404,6 @@ const Page = async ({ params }) => {
 
                                     return null;
 
-
                                 case "codeBlock":
                                     return (
                                         <pre
@@ -423,7 +415,6 @@ const Page = async ({ params }) => {
                                             </code>
                                         </pre>
                                     );
-
 
                                 case "bulletList":
                                     return (
@@ -506,7 +497,7 @@ const Page = async ({ params }) => {
                     )}
                 </article>
                 <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4">
-                    {/* Tags */}
+
                     <div className="flex flex-wrap items-center gap-2">
                         {
                             blog?.tags?.map((tag, index) => {

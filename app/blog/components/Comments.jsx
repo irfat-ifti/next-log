@@ -131,8 +131,6 @@ const Comments = ({ blog, comments }) => {
         return `${years} year${years !== 1 ? "s" : ""} ago`;
     }
 
-
-
     return (
         <section className="flex flex-col gap-6 pt-4">
             <div className="flex items-center justify-between">
@@ -288,7 +286,6 @@ const Comments = ({ blog, comments }) => {
                 ))}
             </div>
 
-            {/* Delete Comment Confirmation Modal */}
             <ConfirmationModal
                 isOpen={Boolean(commentToDelete)}
                 onClose={() => !deletingComment && setCommentToDelete(null)}

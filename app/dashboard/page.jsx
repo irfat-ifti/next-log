@@ -42,7 +42,7 @@ export default function DashboardOverviewPage() {
 
     return (
         <div className="mx-auto max-w-6xl space-y-8">
-            {/* Welcome Banner */}
+
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 p-6 text-white shadow-md sm:p-8">
                 <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
                     <div className="space-y-2">
@@ -69,13 +69,11 @@ export default function DashboardOverviewPage() {
                     </div>
                 </div>
 
-                {/* Decorative background glow */}
                 <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
             </div>
 
-            {/* Metrics Overview */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {/* Total Posts */}
+
                 <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-500">Total Articles</span>
@@ -91,7 +89,6 @@ export default function DashboardOverviewPage() {
                     </div>
                 </div>
 
-                {/* Published */}
                 <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-500">Published</span>
@@ -107,7 +104,6 @@ export default function DashboardOverviewPage() {
                     </div>
                 </div>
 
-                {/* Drafts */}
                 <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-500">Drafts</span>
@@ -123,7 +119,6 @@ export default function DashboardOverviewPage() {
                     </div>
                 </div>
 
-                {/* Author Profile */}
                 <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-500">Account Role</span>
@@ -139,7 +134,6 @@ export default function DashboardOverviewPage() {
                 </div>
             </div>
 
-            {/* Recent Articles Section */}
             <div className="rounded-2xl border border-gray-200/80 bg-white shadow-xs">
                 <div className="flex items-center justify-between border-b border-gray-100 p-5 sm:px-6">
                     <div>

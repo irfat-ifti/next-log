@@ -185,7 +185,7 @@ function BlogContent() {
     return (
         <>
             <section className="mb-8 w-full max-w-6xl mx-auto mt-16.25 pt-16 px-4">
-                {/* Header */}
+
                 <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
                     <div className="max-w-2xl">
                         <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
@@ -200,7 +200,6 @@ function BlogContent() {
                         </p>
                     </div>
 
-                    {/* Quick navigation to All Categories / All Tags */}
                     <div className="flex items-center gap-2">
                         <Link
                             href="/categories"
@@ -219,7 +218,6 @@ function BlogContent() {
                     </div>
                 </div>
 
-                {/* Active Tag Banner if filtered by tag */}
                 {activeTag && (
                     <div className="mb-4 flex items-center justify-between rounded-xl bg-blue-50/80 border border-blue-100 px-4 py-3 text-sm text-blue-900">
                         <div className="flex items-center gap-2">
@@ -238,9 +236,8 @@ function BlogContent() {
                     </div>
                 )}
 
-                {/* Search & Category Filter Bar */}
                 <div className="space-y-4 rounded-xl bg-white p-4 shadow-sm border border-gray-100">
-                    {/* Search Input */}
+
                     <div className="relative w-full">
                         <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
                             search
@@ -255,7 +252,6 @@ function BlogContent() {
                         />
                     </div>
 
-                    {/* Category Filter Pills (Top / Active Categories) */}
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="scrollbar-none flex items-center gap-2 overflow-x-auto pb-1 text-nowrap max-w-full">
                             <button
@@ -270,7 +266,6 @@ function BlogContent() {
                                 <span>All Topics</span>
                             </button>
 
-                            {/* Custom active category pill if arrived via URL param */}
                             {isCustomActiveCategory && (
                                 <button
                                     className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium bg-blue-600 text-white shadow-sm cursor-pointer"
@@ -314,7 +309,6 @@ function BlogContent() {
                             })}
                         </div>
 
-                        {/* Link to see all categories */}
                         <Link
                             href="/categories"
                             className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-0.5 ml-auto shrink-0"
@@ -326,7 +320,6 @@ function BlogContent() {
                 </div>
             </section>
 
-            {/* Posts List */}
             <div className="w-full max-w-6xl mx-auto px-4 min-h-[350px]">
                 {loading ? (
                     <LoadingSpinner size={46} label="Loading articles..." />
@@ -364,7 +357,6 @@ function BlogContent() {
                     </div>
                 )}
 
-                {/* Load More Button Section */}
                 {!loading && !error && displayedPosts.length > 0 && (
                     <div className="mt-12 mb-20 flex flex-col items-center justify-center gap-3">
                         {hasMore ? (

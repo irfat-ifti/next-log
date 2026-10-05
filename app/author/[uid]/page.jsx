@@ -86,7 +86,7 @@ export default function AuthorProfilePage({ params }) {
     return (
         <div className="min-h-screen bg-gray-50/50 pb-20 pt-24">
             <div className="mx-auto max-w-5xl px-4">
-                {/* Back to Blog */}
+
                 <div className="mb-6">
                     <Link
                         href="/blog"
@@ -97,13 +97,12 @@ export default function AuthorProfilePage({ params }) {
                     </Link>
                 </div>
 
-                {/* Author Info Card */}
                 <div className="mb-10 rounded-2xl bg-white p-6 shadow-sm border border-gray-100 sm:p-8">
                     {loading ? (
                         <LoadingSpinner size={36} label="Loading author profile..." />
                     ) : (
                         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start text-center sm:text-left">
-                            {/* Avatar */}
+
                             <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full shadow-sm ring-4 ring-gray-100">
                                 <Image
                                     src={authorAvatar}
@@ -114,7 +113,6 @@ export default function AuthorProfilePage({ params }) {
                                 />
                             </div>
 
-                            {/* Details */}
                             <div className="flex-1">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div>
@@ -134,7 +132,6 @@ export default function AuthorProfilePage({ params }) {
                                         </span>
                                     </div>
 
-                                    {/* Article count */}
                                     <div className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-semibold text-blue-700 self-center sm:self-start">
                                         <span className="material-symbols-outlined text-[16px]">article</span>
                                         <span>
@@ -149,7 +146,6 @@ export default function AuthorProfilePage({ params }) {
                                     </p>
                                 )}
 
-                                {/* Social Connections */}
                                 {(socialLinks.x || socialLinks.linkedin) && (
                                     <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-2">
                                         {socialLinks.x && (
@@ -185,7 +181,6 @@ export default function AuthorProfilePage({ params }) {
                     )}
                 </div>
 
-                {/* Posts Heading */}
                 <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-4">
                     <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[22px] text-gray-700">menu_book</span>
@@ -200,7 +195,6 @@ export default function AuthorProfilePage({ params }) {
                     )}
                 </div>
 
-                {/* Author's Posts */}
                 {loading ? (
                     <LoadingSpinner size={42} label="Loading articles..." />
                 ) : error ? (
@@ -233,4 +227,3 @@ export default function AuthorProfilePage({ params }) {
         </div>
     );
 }
-

@@ -9,7 +9,6 @@ import ShowToast from "@/app/lib/toast";
 import { useAuth } from "@/app/context/AuthProvider";
 import { sanitizeSlug, isSlugAvailable } from "@/app/lib/slug";
 
-
 const Page = () => {
     const [content, setContent] = useState({ html: "", json: null });
     const [title, setTitle] = useState("");
@@ -159,7 +158,7 @@ const Page = () => {
 
     return (
         <div className="flex-1 flex flex-col min-w-0">
-            {/* Header & Actions */}
+
             <div className="px-8 py-5 border-b border-slate-200/80 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <Link
@@ -189,9 +188,8 @@ const Page = () => {
                     </p>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex items-center gap-3">
-                    {/* Save Draft */}
+
                     <button
                         className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                         type="button"
@@ -218,7 +216,6 @@ const Page = () => {
                         <span>{loading && loadingAction === "draft" ? "Saving..." : "Save Draft"}</span>
                     </button>
 
-                    {/* Publish */}
                     <button
                         className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                         type="button"
@@ -252,7 +249,6 @@ const Page = () => {
                 </div>
             </div>
 
-            {/* Main Content Form */}
             <main className="flex-1 p-6 md:p-8 overflow-y-auto">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <LeftColumn

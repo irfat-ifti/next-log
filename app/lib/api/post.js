@@ -24,18 +24,22 @@ async function adjustCategoryPostCount(categoryIdentifier, delta) {
     try {
         const catRef = collection(db, "categories");
         let catDocRef = null;
-        if (categoryIdentifier.length > 15) {
-            catDocRef = doc(db, "categories", categoryIdentifier);
+        const cleanSlug = categoryIdentifier.toLowerCase().trim().replace(/\s+/g, "-");
+
+        // Check by slug first
+        const qSlug = query(catRef, where("slug", "==", cleanSlug), limit(1));
+        const snapSlug = await getDocs(qSlug);
+        if (!snapSlug.empty) {
+            catDocRef = snapSlug.docs[0].ref;
         } else {
-            const cleanSlug = categoryIdentifier.toLowerCase().trim().replace(/\s+/g, "-");
-            const q = query(catRef, where("slug", "==", cleanSlug), limit(1));
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-                catDocRef = snap.docs[0].ref;
+            // Check by exact name
+            const qName = query(catRef, where("name", "==", categoryIdentifier), limit(1));
+            const snapName = await getDocs(qName);
+            if (!snapName.empty) {
+                catDocRef = snapName.docs[0].ref;
             } else {
-                const qName = query(catRef, where("name", "==", categoryIdentifier), limit(1));
-                const snapName = await getDocs(qName);
-                if (!snapName.empty) catDocRef = snapName.docs[0].ref;
+                // If ID directly
+                catDocRef = doc(db, "categories", categoryIdentifier);
             }
         }
         if (catDocRef) {
@@ -120,6 +124,7 @@ export async function createPost(post) {
                 };
             })
             : [];
+        const tagSlugs = formattedTags.map((t) => t.slug || t.name.toLowerCase().trim()).filter(Boolean);
 
         // Build final Firestore document
         const newPost = {
@@ -131,6 +136,7 @@ export async function createPost(post) {
             category: post.category || "",
             categorySlug: (post.category || "").toLowerCase().trim().replace(/\s+/g, "-"),
             tags: formattedTags,
+            tagSlugs,
             featuredImage: featuredImageData,
             isFeatured: Boolean(post.isFeatured),
             status: post.status || "published",
@@ -170,34 +176,6 @@ export async function createPost(post) {
     }
 }
 
-/**
- * Fetches all posts ordered by creation date.
- */
-// export async function getPosts() {
-//     try {
-//         const collectionRef = collection(db, COLLECTION_NAME);
-//         let querySnapshot;
-//         try {
-//             const q = query(collectionRef, orderBy("createdAtTimestamp", "desc"));
-//             querySnapshot = await getDocs(q);
-//         } catch {
-//             querySnapshot = await getDocs(collectionRef);
-//         }
-
-//         const posts = [];
-//         querySnapshot.forEach((docSnap) => {
-//             posts.push({
-//                 id: docSnap.id,
-//                 ...docSnap.data(),
-//             });
-//         });
-
-//         return { status: true, data: posts };
-//     } catch (error) {
-//         console.error("getPosts error:", error);
-//         return { status: false, errorMessage: error.message, data: [] };
-//     }
-// }
 export async function getPosts(options = {}) {
     try {
         const opts = typeof options === "number" ? { pageSize: options } : (options || {});
@@ -212,54 +190,69 @@ export async function getPosts(options = {}) {
         } = opts;
 
         const collectionRef = collection(db, COLLECTION_NAME);
-        const constraints = [];
-
-        if (status) {
-            constraints.push(where("status", "==", status));
-        }
-
-        // Apply category filter with casing/slug variants
-        if (category && category !== "all") {
-            const clean = category.trim();
-            const lower = clean.toLowerCase();
-            const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
-            const slug = lower.replace(/\s+/g, "-");
-            const candidates = Array.from(new Set([clean, lower, cap, slug]));
-            if (candidates.length === 1) {
-                constraints.push(where("category", "==", candidates[0]));
-            } else {
-                constraints.push(where("category", "in", candidates.slice(0, 10)));
-            }
-        }
-
-        if (orderByField) {
-            constraints.push(orderBy(orderByField, orderDirection));
-        }
-
-        if (lastDoc) {
-            constraints.push(startAfter(lastDoc));
-        }
-
-        // Fetch pageSize + 1 to reliably detect if there is a next page
+        const cleanCategory = category && category !== "all" ? category.trim() : null;
+        const targetCategorySlug = cleanCategory ? cleanCategory.toLowerCase().replace(/\s+/g, "-") : null;
+        const cleanTag = tag && tag.trim() ? tag.toLowerCase().trim().replace(/^#/, "") : null;
         const limitCount = pageSize && typeof pageSize === "number" && pageSize > 0 ? pageSize + 1 : null;
-        if (limitCount) {
-            constraints.push(limit(limitCount));
-        }
 
         let querySnapshot;
-        try {
-            const q = query(collectionRef, ...constraints);
-            querySnapshot = await getDocs(q);
-        } catch (queryErr) {
-            console.warn("Primary getPosts query failed (missing index or constraint mismatch). Falling back:", queryErr?.message);
-            // Fallback query without compound where conditions to avoid crashing on missing indexes
-            const fallbackConstraints = [];
-            if (status) fallbackConstraints.push(where("status", "==", status));
-            if (orderByField) fallbackConstraints.push(orderBy(orderByField, orderDirection));
-            if (lastDoc) fallbackConstraints.push(startAfter(lastDoc));
-            if (limitCount) fallbackConstraints.push(limit(limitCount));
-            const qFallback = query(collectionRef, ...fallbackConstraints);
-            querySnapshot = await getDocs(qFallback);
+
+        // If filtering by tag, category, or both
+        if (targetCategorySlug || cleanTag) {
+            try {
+                const specificConstraints = [];
+                if (status) specificConstraints.push(where("status", "==", status));
+                if (targetCategorySlug) specificConstraints.push(where("categorySlug", "==", targetCategorySlug));
+                if (cleanTag) specificConstraints.push(where("tagSlugs", "array-contains", cleanTag));
+                if (orderByField) specificConstraints.push(orderBy(orderByField, orderDirection));
+                if (lastDoc) specificConstraints.push(startAfter(lastDoc));
+                if (limitCount) specificConstraints.push(limit(limitCount));
+
+                const qSpecific = query(collectionRef, ...specificConstraints);
+                querySnapshot = await getDocs(qSpecific);
+            } catch {
+                // Fallback without compound orderBy if index is absent
+                try {
+                    const fallbackConstraints = [];
+                    if (status) fallbackConstraints.push(where("status", "==", status));
+                    if (targetCategorySlug) fallbackConstraints.push(where("categorySlug", "==", targetCategorySlug));
+                    if (cleanTag) fallbackConstraints.push(where("tagSlugs", "array-contains", cleanTag));
+                    if (limitCount) fallbackConstraints.push(limit(limitCount));
+
+                    const qFallback = query(collectionRef, ...fallbackConstraints);
+                    querySnapshot = await getDocs(qFallback);
+                } catch {
+                    // General scan fallback if needed
+                    const allSnap = await getDocs(collectionRef);
+                    querySnapshot = allSnap;
+                }
+            }
+        } else {
+            const constraints = [];
+            if (status) {
+                constraints.push(where("status", "==", status));
+            }
+            if (orderByField) {
+                constraints.push(orderBy(orderByField, orderDirection));
+            }
+            if (lastDoc) {
+                constraints.push(startAfter(lastDoc));
+            }
+            if (limitCount) {
+                constraints.push(limit(limitCount));
+            }
+
+            try {
+                const q = query(collectionRef, ...constraints);
+                querySnapshot = await getDocs(q);
+            } catch (queryErr) {
+                console.warn("Primary getPosts query failed. Falling back:", queryErr?.message);
+                const fallbackConstraints = [];
+                if (status) fallbackConstraints.push(where("status", "==", status));
+                if (limitCount) fallbackConstraints.push(limit(limitCount));
+                const qFallback = query(collectionRef, ...fallbackConstraints);
+                querySnapshot = await getDocs(qFallback);
+            }
         }
 
         const rawDocs = querySnapshot.docs;
@@ -271,33 +264,28 @@ export async function getPosts(options = {}) {
             ...docSnap.data(),
         }));
 
-        // Filter category by slug or name case-insensitively
-        if (category && category !== "all") {
-            const targetSlug = category.toLowerCase().trim().replace(/\s+/g, "-");
+        // Post-filter check for category (supporting name or slug)
+        if (targetCategorySlug) {
             posts = posts.filter((p) => {
-                const catStr = String(p.category || "").toLowerCase().trim();
-                const catSlug = (p.categorySlug || catStr).replace(/\s+/g, "-");
-                return (
-                    catStr === targetSlug ||
-                    catSlug === targetSlug ||
-                    catStr === category.toLowerCase().trim()
-                );
+                const pSlug = (p.categorySlug || "").toLowerCase().trim();
+                const pName = String(p.category || "").toLowerCase().trim().replace(/\s+/g, "-");
+                return pSlug === targetCategorySlug || pName === targetCategorySlug;
             });
         }
 
-        // Apply tag filter in-memory (handles array of tag objects or strings)
-        if (tag && tag.trim()) {
-            const tLower = tag.toLowerCase().trim().replace(/^#/, "");
+        // Post-filter check for tag
+        if (cleanTag) {
             posts = posts.filter((p) => {
+                if (Array.isArray(p.tagSlugs) && p.tagSlugs.includes(cleanTag)) return true;
                 if (!Array.isArray(p.tags)) return false;
                 return p.tags.some((t) => {
                     const name = typeof t === "object" ? t.name : t;
                     const slug = typeof t === "object" ? t.slug : "";
                     const id = typeof t === "object" ? t.id : "";
                     return (
-                        (name && String(name).toLowerCase() === tLower) ||
-                        (slug && String(slug).toLowerCase() === tLower) ||
-                        (id && String(id).toLowerCase() === tLower)
+                        (name && String(name).toLowerCase() === cleanTag) ||
+                        (slug && String(slug).toLowerCase() === cleanTag) ||
+                        (id && String(id).toLowerCase() === cleanTag)
                     );
                 });
             });
@@ -467,7 +455,10 @@ export async function updatePost(id, postData) {
         const updateData = {
             ...postData,
             featuredImage: featuredImageData ?? null,
-            ...(formattedTags !== undefined ? { tags: formattedTags } : {}),
+            ...(formattedTags !== undefined ? {
+                tags: formattedTags,
+                tagSlugs: formattedTags.map((t) => t.slug || t.name.toLowerCase().trim()).filter(Boolean),
+            } : {}),
             updatedAt: serverTimestamp(),
             updatedAtTimestamp: Date.now(),
         };
@@ -536,7 +527,6 @@ export async function getPostsByAuthorUid(uid) {
         const q = query(
             collectionRef,
             where("author.uid", "==", uid)
-            // orderBy("createdAtTimestamp", "desc")
         );
 
         const querySnapshot = await getDocs(q);

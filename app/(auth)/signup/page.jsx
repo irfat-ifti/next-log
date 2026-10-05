@@ -48,7 +48,6 @@ const Page = () => {
 
                 <div className="w-full rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
 
-                    {/* Header */}
                     <div className="mb-8 text-center">
 
                         <Link
@@ -66,10 +65,9 @@ const Page = () => {
                             Join NextLog and start sharing your ideas.
                         </p>
                     </div>
-                    {/* Signup Form */}
+
                     <form className="space-y-5" onSubmit={handleSignup}>
 
-                        {/* Name */}
                         <div>
 
                             <label
@@ -89,7 +87,7 @@ const Page = () => {
                                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </div>
-                        {/* Email */}
+
                         <div>
 
                             <label
@@ -109,7 +107,7 @@ const Page = () => {
                                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </div>
-                        {/* Password */}
+
                         <div>
 
                             <label
@@ -130,7 +128,7 @@ const Page = () => {
                                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </div>
-                        {/* Confirm Password */}
+
                         <div>
 
                             <label
@@ -151,7 +149,7 @@ const Page = () => {
                                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </div>
-                        {/* Submit */}
+
                         <button
                             type="submit"
                             disabled={loading}
@@ -167,7 +165,7 @@ const Page = () => {
                             )}
                         </button>
                     </form>
-                    {/* Login Link */}
+
                     <p className="mt-6 text-center text-sm text-gray-500">
                         Already have an account?{" "}
                         <Link
