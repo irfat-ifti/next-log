@@ -34,6 +34,9 @@ export function AuthProvider({ children }) {
                     return;
                 }
 
+                // Immediately set authenticated user
+                setUser(authUser);
+
                 try {
                     const userRef = doc(
                         db,
@@ -41,13 +44,23 @@ export function AuthProvider({ children }) {
                         authUser.uid
                     );
 
-                    const userSnap = await getDoc(userRef);
+                    let userSnap = await getDoc(userRef);
+
+                    // If profile doc hasn't been created yet (e.g. signup in progress), retry briefly
+                    if (!userSnap.exists()) {
+                        await new Promise((resolve) => setTimeout(resolve, 800));
+                        userSnap = await getDoc(userRef);
+                    }
 
                     if (userSnap.exists()) {
-                        setUser(authUser);
                         setProfile(userSnap.data());
                     } else {
-                        setProfile(null);
+                        // Fallback profile if Firestore doc is still pending
+                        setProfile((prev) => prev || {
+                            name: authUser.displayName || "",
+                            email: authUser.email || "",
+                            role: "author",
+                        });
                     }
 
                 } catch (error) {
@@ -56,7 +69,7 @@ export function AuthProvider({ children }) {
                         error
                     );
 
-                    setProfile(null);
+                    setProfile((prev) => prev || null);
                 } finally {
                     setLoading(false);
                 }
@@ -66,8 +79,12 @@ export function AuthProvider({ children }) {
         return () => unsubscribe();
     }, []);
 
-    const refreshProfile = async () => {
+    const refreshProfile = async (fallbackData = null) => {
         if (!auth.currentUser) return null;
+        setUser(auth.currentUser);
+        if (fallbackData) {
+            setProfile(fallbackData);
+        }
         try {
             const userRef = doc(db, "users", auth.currentUser.uid);
             const userSnap = await getDoc(userRef);
@@ -75,6 +92,9 @@ export function AuthProvider({ children }) {
                 const data = userSnap.data();
                 setProfile(data);
                 return data;
+            } else if (fallbackData) {
+                setProfile(fallbackData);
+                return fallbackData;
             }
         } catch (error) {
             console.error("Failed to refresh profile:", error);
@@ -88,6 +108,8 @@ export function AuthProvider({ children }) {
                 user,
                 profile,
                 loading,
+                setUser,
+                setProfile,
                 refreshProfile,
             }}
         >

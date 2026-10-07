@@ -9,13 +9,13 @@ import { useAuth } from "@/app/context/AuthProvider";
 const Page = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, setUser, refreshProfile } = useAuth();
 
     useEffect(() => {
-        if (user) {
+        if (user && !loading) {
             router.replace("/dashboard/profile");
         }
-    }, [user, router]);
+    }, [user, loading, router]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -25,13 +25,20 @@ const Page = () => {
         const password = formData.get("password");
 
         const response = await login(email, password);
-        setLoading(false);
         if (response.error) {
+            setLoading(false);
             ShowToast({ message: response.error, type: "error" });
         } else {
+            if (response.user) {
+                setUser(response.user);
+            }
+            if (refreshProfile) {
+                await refreshProfile();
+            }
             ShowToast({ message: response.message, type: "success" });
             router.push("/dashboard/profile");
             router.refresh();
+            setLoading(false);
         }
     };
 

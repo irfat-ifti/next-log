@@ -56,6 +56,7 @@ export async function signup(name, email, password) {
         // 3. Create Firestore user document
         const userInformation = {
             name: name,
+            email: email,
             bio: "",
             avatar: null,
             username: "",

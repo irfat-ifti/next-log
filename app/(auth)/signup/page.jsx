@@ -9,13 +9,13 @@ import { useAuth } from "@/app/context/AuthProvider";
 const Page = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, setUser, setProfile, refreshProfile } = useAuth();
 
     useEffect(() => {
-        if (user) {
+        if (user && !loading) {
             router.replace("/dashboard/profile");
         }
-    }, [user, router]);
+    }, [user, loading, router]);
 
     const handleSignup = async (e) => {
         e.preventDefault();
@@ -31,13 +31,23 @@ const Page = () => {
             return;
         }
         const response = await signup(name, email, password);
-        setLoading(false);
         if (response.error) {
+            setLoading(false);
             ShowToast({ message: response.error, type: "error" });
         } else {
+            if (response.user) {
+                setUser(response.user);
+            }
+            if (response.userInformation) {
+                setProfile(response.userInformation);
+            }
+            if (refreshProfile) {
+                await refreshProfile(response.userInformation);
+            }
             ShowToast({ message: response.message, type: "success" });
             router.push("/dashboard/profile");
             router.refresh();
+            setLoading(false);
         }
     };
 
